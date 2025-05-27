@@ -1,0 +1,106 @@
+Update my Flask project with the following requirements for the "Humphrey Visual Field 24-2 Full Threshold Simulation" VR-compatible test app:
+
+---
+
+### 🔧 Bug Fixes
+
+1. Fix visual test issues:
+   - The fullscreen option should **remain active throughout** the test.
+   - Ensure it works on **mobile/VR** (e.g., Google Cardboard).
+
+---
+
+### 🧠 Visual Field Test Features
+
+2. Implement the **24-2 Grid (54 test points)**:
+   - Use ±24° layout with 54 points (24-2 standard).
+   - Show a central fixation cross at all times.
+
+3. **Stimulus Presentation**:
+   - Stimuli should be Goldmann Size III (0.43°).
+   - Stimulus should appear for **500ms**.
+   - Show white stimulus on gray background.
+   - Accept response if screen is tapped **within 50–1500 ms** of stimulus onset.
+   - Hide stimulus after 500 ms.
+
+4. **4–2 Staircase Logic**:
+   - Start at 24 dB.
+   - If seen, decrease intensity by 4 dB.
+   - If missed, increase by 4 dB.
+   - Once bracketed, switch to ±2 dB until threshold is found.
+   - Continue until each point has a final threshold value.
+
+5. **Breaks**:
+   - If the user pauses or reloads, test should resume where left off.
+
+---
+
+### 🧑‍⚕️ Doctor Side (Live Monitoring)
+
+6. Implement **Flask-SocketIO/WebSockets**:
+   - Doctor’s screen shows:
+     - Which point is being tested (live)
+     - Decibel level
+     - Patient response (✅ seen / ❌ missed)
+   - Render live updated **heatmap/grid view** of all points as test progresses.
+
+---
+
+### 📊 Reliability Indices (Calculate in backend):
+
+7. Reliability metrics:
+   - False Positives (FP): patient taps when **no stimulus** is shown
+   - False Negatives (FN): patient fails to respond to **bright stimulus at seen point**
+   - Fixation Loss (FL): stimulus at blind spot is tapped
+   - Show all 3 values with alerts if:
+     - FP > 15%
+     - FN > 25%
+     - FL > 20%
+
+---
+
+### 📁 Data Storage
+
+8. Before test:
+   - Ask for Name, Age, Patient ID.
+
+9. After test:
+   - Save to `.xlsx` file using `pandas` and `openpyxl`
+   - For each point, save:
+     - (x, y) position
+     - dB level shown
+     - Response (seen/not seen)
+     - Response time
+     - Point type: Regular / FP / FN / FL
+
+10. Results Summary:
+   - Grayscale map of responses
+   - FP, FN, FL %
+   - TD, PD, MD, PSD
+   - GHT result: compare upper/lower field zones
+
+---
+
+### 📱 Mobile & VR Fixes
+
+11. Fix fullscreen on phone:
+   - Ensure `meta viewport` is set:
+     ```html
+     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+     ```
+   - Use `requestFullscreen()` in JavaScript on test start.
+   - Make sure fullscreen **does not exit during test**.
+   - Touch input should register anywhere on screen.
+
+12. Make layout VR-friendly:
+   - Center fixation cross and test points in 3D stereoscopic layout (optional).
+   - Ensure test works inside Google Cardboard browser (2D fallback is okay).
+
+---
+
+### 🔄 Push to GitHub (replace remote if needed)
+```bash
+git remote set-url origin https://github.com/SofiaRebecca/Glau
+git add .
+git commit -m "Visual Field 24-2 Test, SocketIO, Fullscreen Fixes"
+git push origin main --force
