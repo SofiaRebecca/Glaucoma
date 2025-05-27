@@ -54,17 +54,30 @@ def save_notes():
 def save_test_result():
     """Save test results from individual test modules"""
     try:
+        logging.info("Received save_test_result request")
         data = request.get_json()
+        
+        if not data:
+            logging.error("No JSON data received")
+            return jsonify({'success': False, 'message': 'No data received'}), 400
+            
         test_name = data.get('test_name', 'unknown')
         patient_name = data.get('patient_name', 'Unknown')
+        
+        logging.info(f"Saving test result for {test_name} - Patient: {patient_name}")
+        logging.debug(f"Test data: {data}")
         
         # Save to Excel
         excel_writer.save_test_result(test_name, patient_name, data)
         
-        return jsonify({'success': True, 'message': 'Test result saved successfully'})
+        response = {'success': True, 'message': 'Test result saved successfully'}
+        logging.info(f"Returning response: {response}")
+        return jsonify(response)
+        
     except Exception as e:
         logging.error(f"Error saving test result: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        error_response = {'success': False, 'message': str(e)}
+        return jsonify(error_response), 500
 
 # WebSocket events for real-time communication
 @socketio.on('join_doctor')

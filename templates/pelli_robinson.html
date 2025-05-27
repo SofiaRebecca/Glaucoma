@@ -13,6 +13,8 @@ saveResults(data) {
                     responses: data.responses
                 };
 
+                console.log('Saving test data:', testData);
+
                 fetch('/api/save_test_result', {
                     method: 'POST',
                     headers: {
@@ -20,11 +22,18 @@ saveResults(data) {
                     },
                     body: JSON.stringify(testData)
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(result => {
-                    console.log('Results saved:', result);
+                    console.log('Results saved successfully:', result);
                 })
                 .catch(error => {
                     console.error('Error saving results:', error);
+                    console.error('Full error details:', error.message);
                 });
             }
