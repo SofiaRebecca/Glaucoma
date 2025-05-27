@@ -186,6 +186,26 @@
         .btn-success { background: #28a745; color: white; }
         .btn-warning { background: #ffc107; color: black; }
         .btn-danger { background: #dc3545; color: white; }
+
+        .fullscreen-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 123, 255, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(0, 123, 255, 1);
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -219,6 +239,10 @@
             <div>Detected: <span id="detected-count">0</span></div>
             <div>Accuracy: <span id="accuracy">0%</span></div>
         </div>
+
+        <button class="fullscreen-btn" onclick="toggleTestFullscreen()" title="Toggle Fullscreen">
+            <i class="fas fa-expand" id="vf-fullscreen-icon"></i>
+        </button>
 
         <div class="visual-field-grid">
             <div class="fixation-point">+</div>
@@ -540,10 +564,57 @@
             }
         }
 
+        function toggleTestFullscreen() {
+            const elem = document.documentElement;
+            const icon = document.getElementById('vf-fullscreen-icon');
+
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && 
+                !document.mozFullScreenElement && !document.msFullscreenElement) {
+                
+                const request = elem.requestFullscreen || 
+                              elem.webkitRequestFullscreen || 
+                              elem.mozRequestFullScreen || 
+                              elem.msRequestFullscreen;
+                
+                if (request) {
+                    request.call(elem).catch(err => {
+                        console.log('Fullscreen failed:', err);
+                    });
+                }
+            } else {
+                const exit = document.exitFullscreen || 
+                           document.webkitExitFullscreen || 
+                           document.mozCancelFullScreen || 
+                           document.msExitFullscreen;
+                
+                if (exit) {
+                    exit.call(document);
+                }
+            }
+        }
+
+        // Update fullscreen icon
+        function updateVFFullscreenIcon() {
+            const icon = document.getElementById('vf-fullscreen-icon');
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || 
+                               document.mozFullScreenElement || document.msFullscreenElement;
+            
+            if (icon) {
+                icon.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+            }
+        }
+
+        document.addEventListener('fullscreenchange', updateVFFullscreenIcon);
+        document.addEventListener('webkitfullscreenchange', updateVFFullscreenIcon);
+        document.addEventListener('mozfullscreenchange', updateVFFullscreenIcon);
+        document.addEventListener('MSFullscreenChange', updateVFFullscreenIcon);
+
         // Handle escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (confirm('Are you sure you want to exit the test?')) {
+                if (document.fullscreenElement) {
+                    toggleTestFullscreen();
+                } else if (confirm('Are you sure you want to exit the test?')) {
                     window.location.href = '/patient';
                 }
             }
