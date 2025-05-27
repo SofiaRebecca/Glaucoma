@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -53,7 +52,7 @@
                                 <option value="sparcs">SPARCS Test</option>
                             </select>
                         </div>
-                        
+
                         <div class="d-grid gap-2 mb-3">
                             <button class="btn btn-success" id="start-test-btn">
                                 <i class="fas fa-play me-2"></i>
@@ -112,22 +111,22 @@
                             <label for="symptoms" class="form-label">Symptoms</label>
                             <textarea class="form-control" id="symptoms" rows="3" placeholder="Patient reported symptoms..."></textarea>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="medical-concerns" class="form-label">Medical Concerns</label>
                             <textarea class="form-control" id="medical-concerns" rows="3" placeholder="Clinical observations and concerns..."></textarea>
                         </div>
-                        
+
                         <div class="mb-3">
                             <label for="additional-notes" class="form-label">Additional Notes</label>
                             <textarea class="form-control" id="additional-notes" rows="3" placeholder="Additional clinical notes..."></textarea>
                         </div>
-                        
+
                         <button class="btn btn-primary w-100" id="save-notes-btn">
                             <i class="fas fa-save me-2"></i>
                             Save Notes
                         </button>
-                        
+
                         <div class="alert alert-success mt-3" id="notes-status" style="display: none;">
                             <small>Notes saved successfully</small>
                         </div>
@@ -137,6 +136,40 @@
 
             <!-- Patient Activity Monitor -->
             <div class="col-lg-8">
+                <!-- Screen Mirroring Panel -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-desktop me-2"></i>
+                            Patient Screen Mirror
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-success" id="start-mirror-btn">
+                                <i class="fas fa-play me-1"></i>
+                                Start Mirror
+                            </button>
+                            <button class="btn btn-sm btn-danger" id="stop-mirror-btn" style="display: none;">
+                                <i class="fas fa-stop me-1"></i>
+                                Stop Mirror
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="patient-screen-mirror" class="text-center p-3" style="background: #000; border-radius: 5px; min-height: 300px; position: relative; overflow: hidden;">
+                            <div id="mirror-placeholder" class="text-white">
+                                <i class="fas fa-mobile-alt fa-3x mb-3"></i>
+                                <h6>Patient Screen Not Connected</h6>
+                                <p class="small">Click "Start Mirror" to begin screen sharing</p>
+                            </div>
+                            <img id="patient-screen-image" style="display: none; max-width: 100%; max-height: 400px; cursor: crosshair;" />
+                            <canvas id="mirror-canvas" style="display: none; max-width: 100%; max-height: 400px; cursor: crosshair; border: 1px solid #333;"></canvas>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <small class="text-muted">Click on the mirrored screen to control patient device</small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
@@ -158,24 +191,6 @@
                         </div>
                     </div>
                 </div>
-                
-                <!-- Test Results Display -->
-                <div class="card mt-4">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-chart-line me-2"></i>
-                            Test Results
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div id="test-results">
-                            <div class="text-center text-muted">
-                                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-                                <p>Test results will appear here when patients complete tests</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -185,10 +200,11 @@
         const socket = io();
         let currentPatient = '';
         let syncEnabled = false;
-        
+		let mirroring = false; // Track mirroring status
+
         // Join doctor room
         socket.emit('join_doctor');
-        
+
         // Patient status updates
         socket.on('patient_status', function(data) {
             const statusElement = document.getElementById('patient-status');
@@ -203,33 +219,105 @@
                 document.getElementById('patient-activity').value = 'Waiting...';
             }
         });
-        
+
         // Listen for patient view updates
         socket.on('patient_view_update', function(data) {
             updatePatientActivity(data);
         });
-        
+
         // Listen for patient identification
         socket.on('patient_identified', function(data) {
             currentPatient = data.patient;
             document.getElementById('patient-name').value = currentPatient;
             updatePatientActivity({action: 'Patient identified', patient: currentPatient});
         });
-        
+
         // Listen for test navigation
         socket.on('patient_navigation', function(data) {
             updatePatientActivity(data);
         });
-        
+
+		// Screen mirroring
+		const mirrorCanvas = document.getElementById('mirror-canvas');
+		const mirrorContext = mirrorCanvas ? mirrorCanvas.getContext('2d') : null; // Check if mirrorCanvas exists
+		const patientScreenImage = document.getElementById('patient-screen-image');
+		const mirrorPlaceholder = document.getElementById('mirror-placeholder');
+
+		// Start mirror button
+		document.getElementById('start-mirror-btn').addEventListener('click', function() {
+			socket.emit('doctor_command', { command: 'start_mirror' });
+			document.getElementById('start-mirror-btn').style.display = 'none';
+			document.getElementById('stop-mirror-btn').style.display = 'inline-block';
+			mirroring = true;
+			if (mirrorPlaceholder) {
+				mirrorPlaceholder.style.display = 'none';
+			}
+
+			if (patientScreenImage) {
+				patientScreenImage.style.display = 'block'; // Show the image element
+			}
+		});
+
+		// Stop mirror button
+		document.getElementById('stop-mirror-btn').addEventListener('click', function() {
+			socket.emit('doctor_command', { command: 'stop_mirror' });
+			document.getElementById('start-mirror-btn').style.display = 'inline-block';
+			document.getElementById('stop-mirror-btn').style.display = 'none';
+			mirroring = false;
+			if (mirrorPlaceholder) {
+				mirrorPlaceholder.style.display = 'block';
+			}
+			if (patientScreenImage) {
+				patientScreenImage.style.display = 'none'; // Hide the image element
+			}
+			// Clear canvas
+			if (mirrorContext && mirrorCanvas) {
+                mirrorContext.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
+            }
+
+		});
+
+		// Handle mirrored frame data
+		socket.on('mirror_frame', function(data) {
+			if (mirroring) {
+				// console.log("Received mirror frame");
+				if (patientScreenImage) {
+					patientScreenImage.src = 'data:image/jpeg;base64,' + data.frame; // Update the image source
+				}
+			}
+		});
+
+		// Mouse click event handling
+		const patientScreenMirror = document.getElementById('patient-screen-mirror');
+		if (patientScreenMirror) {
+			patientScreenMirror.addEventListener('click', function(event) {
+				if (mirroring) {
+					const rect = patientScreenMirror.getBoundingClientRect();
+					const x = event.clientX - rect.left;
+					const y = event.clientY - rect.top;
+
+					console.log('Click coordinates:', x, y);
+
+					socket.emit('doctor_command', {
+						command: 'mouse_click',
+						x: x,
+						y: y,
+						width: rect.width,
+						height: rect.height
+					});
+				}
+			});
+		}
+
         function updatePatientActivity(data) {
             const activityDisplay = document.getElementById('patient-activity-display');
             const activityInput = document.getElementById('patient-activity');
-            
+
             let activityText = '';
             let displayHtml = '';
-            
+
             console.log('Patient activity update:', data); // Debug log
-            
+
             switch(data.action) {
                 case 'patient_identified':
                     activityText = `Patient ${data.patient} has joined`;
@@ -309,69 +397,69 @@
                         </div>
                     `;
             }
-            
+
             activityInput.value = activityText;
             activityDisplay.innerHTML = displayHtml;
         }
-        
+
         // Test control buttons
         document.getElementById('start-test-btn').addEventListener('click', function() {
             const testSelect = document.getElementById('test-select');
             const selectedTest = testSelect.value;
-            
+
             if (!selectedTest) {
                 showCommandStatus('Please select a test first', 'warning');
                 return;
             }
-            
+
             socket.emit('doctor_command', {
                 command: 'start',
                 test: selectedTest
             });
-            
+
             showCommandStatus(`Starting ${getTestDisplayName(selectedTest)} test`, 'success');
         });
-        
+
         document.getElementById('skip-test-btn').addEventListener('click', function() {
             socket.emit('doctor_command', {
                 command: 'skip',
                 test: 'current'
             });
-            
+
             showCommandStatus('Skip command sent', 'warning');
         });
-        
+
         document.getElementById('stop-test-btn').addEventListener('click', function() {
             socket.emit('doctor_command', {
                 command: 'stop',
                 test: 'all'
             });
         });
-        
+
         document.getElementById('next-patient-btn').addEventListener('click', function() {
             if (confirm('Move to next patient? This will clear current patient data.')) {
                 socket.emit('doctor_command', {
                     command: 'next_patient'
                 });
-                
+
                 // Clear form data
                 document.getElementById('patient-name').value = 'No patient connected';
                 document.getElementById('patient-activity').value = 'Waiting...';
                 document.getElementById('symptoms').value = '';
                 document.getElementById('medical-concerns').value = '';
                 document.getElementById('additional-notes').value = '';
-                
+
                 currentPatient = '';
                 showCommandStatus('Ready for next patient', 'info');
             }
         });
-        
+
         // Sync toggle
         document.getElementById('toggle-sync').addEventListener('click', function() {
             syncEnabled = !syncEnabled;
             const syncText = document.getElementById('sync-text');
             const btn = this;
-            
+
             if (syncEnabled) {
                 syncText.textContent = 'Disable Sync';
                 btn.className = 'btn btn-sm btn-success';
@@ -382,29 +470,29 @@
                 showCommandStatus('Real-time sync disabled', 'info');
             }
         });
-        
+
         // Command status feedback
         socket.on('command_sent', function(data) {
             showCommandStatus(`Command "${data.command}" sent`, 'success');
         });
-        
+
         // Test results
         socket.on('test_result', function(data) {
             displayTestResult(data);
         });
-        
+
         // Save notes functionality
         document.getElementById('save-notes-btn').addEventListener('click', function() {
             const patientName = document.getElementById('patient-name').value;
             const symptoms = document.getElementById('symptoms').value;
             const medicalConcerns = document.getElementById('medical-concerns').value;
             const additionalNotes = document.getElementById('additional-notes').value;
-            
+
             if (!patientName.trim() || patientName === 'No patient connected') {
                 alert('No patient connected to save notes for');
                 return;
             }
-            
+
             const notesData = {
                 patient_name: patientName,
                 notes: {
@@ -413,7 +501,7 @@
                     additional_notes: additionalNotes
                 }
             };
-            
+
             fetch('/api/save_notes', {
                 method: 'POST',
                 headers: {
@@ -433,31 +521,31 @@
                 showNotesStatus('Error saving notes: ' + error.message, 'error');
             });
         });
-        
+
         function showCommandStatus(message, type) {
             const statusElement = document.getElementById('command-status');
             const textElement = document.getElementById('status-text');
-            
+
             statusElement.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'}`;
             textElement.textContent = message;
             statusElement.style.display = 'block';
-            
+
             setTimeout(() => {
                 statusElement.style.display = 'none';
             }, 3000);
         }
-        
+
         function showNotesStatus(message, type) {
             const statusElement = document.getElementById('notes-status');
             statusElement.className = `alert alert-${type === 'success' ? 'success' : 'danger'} mt-3`;
             statusElement.textContent = message;
             statusElement.style.display = 'block';
-            
+
             setTimeout(() => {
                 statusElement.style.display = 'none';
             }, 3000);
         }
-        
+
         function displayTestResult(data) {
             const resultsContainer = document.getElementById('test-results');
             const resultElement = document.createElement('div');
@@ -466,21 +554,21 @@
                 <strong>${data.test_name}</strong> - Patient: ${data.patient_name}<br>
                 <small>Accuracy: ${data.accuracy}% | Duration: ${data.duration}s | Completed: ${new Date().toLocaleTimeString()}</small>
             `;
-            
+
             // Clear placeholder text if present
             if (resultsContainer.querySelector('.text-muted')) {
                 resultsContainer.innerHTML = '';
             }
-            
+
             resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
-            
+
             // Keep only last 5 results
             const results = resultsContainer.querySelectorAll('.alert');
             if (results.length > 5) {
                 results[results.length - 1].remove();
             }
         }
-        
+
         function getTestDisplayName(testName) {
             const displayNames = {
                 'visual_field': 'Visual Field',
@@ -491,7 +579,7 @@
                 'pelli_robinson': 'Pelli-Robinson',
                 'sparcs': 'SPARCS'
             };
-            
+
             return displayNames[testName] || testName;
         }
     </script>

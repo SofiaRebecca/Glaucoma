@@ -196,6 +196,43 @@ def handle_screen_share_request(data):
     """Handle doctor's request to start screen sharing"""
     socketio.emit('start_screen_share', data, to=patient_room)
 
+@socketio.on('patient_mouse_move')
+def handle_patient_mouse_move(data):
+    """Handle patient mouse movement for mirroring"""
+    socketio.emit('patient_mouse_data', data, to=doctor_room)
+
+@socketio.on('patient_click')
+def handle_patient_click(data):
+    """Handle patient clicks for mirroring"""
+    socketio.emit('patient_click_data', data, to=doctor_room)
+
+@socketio.on('patient_keyboard')
+def handle_patient_keyboard(data):
+    """Handle patient keyboard events for mirroring"""
+    socketio.emit('patient_keyboard_data', data, to=doctor_room)
+
+@socketio.on('doctor_remote_click')
+def handle_doctor_remote_click(data):
+    """Handle doctor remote clicks on patient screen"""
+    socketio.emit('remote_click_command', data, to=patient_room)
+
+@socketio.on('doctor_remote_scroll')
+def handle_doctor_remote_scroll(data):
+    """Handle doctor remote scroll on patient screen"""
+    socketio.emit('remote_scroll_command', data, to=patient_room)
+
+@socketio.on('start_screen_mirror')
+def handle_start_screen_mirror(data):
+    """Start screen mirroring session"""
+    socketio.emit('begin_screen_capture', data, to=patient_room)
+    socketio.emit('mirror_session_started', data, to=doctor_room)
+
+@socketio.on('stop_screen_mirror')
+def handle_stop_screen_mirror(data):
+    """Stop screen mirroring session"""
+    socketio.emit('stop_screen_capture', data, to=patient_room)
+    socketio.emit('mirror_session_stopped', data, to=doctor_room)
+
 # Add test routes to serve tests directly from main app
 @app.route('/test/<test_name>')
 def run_test(test_name):
@@ -222,4 +259,4 @@ if __name__ == '__main__':
     logging.info("Starting Glaucoma Detection System on port 5000...")
     
     # Use SocketIO run for better mobile compatibility and WebSocket support
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

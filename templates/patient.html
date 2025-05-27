@@ -325,77 +325,205 @@
             document.getElementById('test-selection').style.display = 'block';
         });
 
-        // Screen mirroring functionality
+        // Enhanced screen mirroring functionality
         let screenMirrorActive = false;
         let screenCaptureInterval = null;
+        let mouseTrackingActive = false;
 
-        socket.on('start_screen_share', function(data) {
+        socket.on('begin_screen_capture', function(data) {
             startScreenMirroring();
         });
 
-        socket.on('doctor_control', function(data) {
-            handleDoctorControl(data);
+        socket.on('stop_screen_capture', function(data) {
+            stopScreenMirroring();
+        });
+
+        socket.on('remote_click_command', function(data) {
+            simulateClick(data.x, data.y);
+        });
+
+        socket.on('remote_scroll_command', function(data) {
+            window.scrollBy(data.deltaX || 0, data.deltaY || 0);
         });
 
         function startScreenMirroring() {
             if (screenMirrorActive) return;
             
             screenMirrorActive = true;
+            mouseTrackingActive = true;
             
-            // Capture screen every 500ms
+            // Capture screen every 1000ms for better performance on mobile
             screenCaptureInterval = setInterval(() => {
                 captureScreen();
-            }, 500);
+            }, 1000);
+
+            // Start mouse and touch tracking
+            startInputTracking();
+            
+            console.log('Screen mirroring started');
         }
 
         function stopScreenMirroring() {
             screenMirrorActive = false;
+            mouseTrackingActive = false;
+            
             if (screenCaptureInterval) {
                 clearInterval(screenCaptureInterval);
                 screenCaptureInterval = null;
             }
+
+            stopInputTracking();
+            console.log('Screen mirroring stopped');
         }
 
         function captureScreen() {
             if (!screenMirrorActive) return;
             
             html2canvas(document.body, {
-                scale: 0.3,
+                scale: 0.4, // Better quality for mirroring
                 useCORS: true,
-                allowTaint: true
+                allowTaint: true,
+                backgroundColor: '#000000',
+                logging: false
             }).then(canvas => {
-                const imageData = canvas.toDataURL('image/jpeg', 0.5);
+                const imageData = canvas.toDataURL('image/jpeg', 0.6);
                 socket.emit('screen_capture_data', {
                     image: imageData,
                     timestamp: Date.now(),
-                    patient: patientName
+                    patient: patientName,
+                    width: window.innerWidth,
+                    height: window.innerHeight
                 });
             }).catch(err => {
                 console.log('Screen capture failed:', err);
             });
         }
 
-        function handleDoctorControl(data) {
-            switch(data.action) {
-                case 'click':
-                    simulateClick(data.x, data.y);
-                    break;
-                case 'scroll':
-                    window.scrollBy(data.deltaX || 0, data.deltaY || 0);
-                    break;
-                case 'navigate':
-                    if (data.url) {
-                        window.location.href = data.url;
-                    }
-                    break;
-            }
+        function startInputTracking() {
+            if (!mouseTrackingActive) return;
+
+            // Mouse movement tracking
+            document.addEventListener('mousemove', trackMouseMove);
+            document.addEventListener('click', trackClick);
+            document.addEventListener('scroll', trackScroll);
+            
+            // Touch tracking for mobile
+            document.addEventListener('touchstart', trackTouch);
+            document.addEventListener('touchmove', trackTouchMove);
+            document.addEventListener('touchend', trackTouchEnd);
+        }
+
+        function stopInputTracking() {
+            document.removeEventListener('mousemove', trackMouseMove);
+            document.removeEventListener('click', trackClick);
+            document.removeEventListener('scroll', trackScroll);
+            document.removeEventListener('touchstart', trackTouch);
+            document.removeEventListener('touchmove', trackTouchMove);
+            document.removeEventListener('touchend', trackTouchEnd);
+        }
+
+        function trackMouseMove(e) {
+            if (!mouseTrackingActive) return;
+            socket.emit('patient_mouse_move', {
+                x: e.clientX,
+                y: e.clientY,
+                timestamp: Date.now()
+            });
+        }
+
+        function trackClick(e) {
+            if (!mouseTrackingActive) return;
+            socket.emit('patient_click', {
+                x: e.clientX,
+                y: e.clientY,
+                type: 'click',
+                timestamp: Date.now()
+            });
+        }
+
+        function trackScroll(e) {
+            if (!mouseTrackingActive) return;
+            socket.emit('patient_scroll', {
+                scrollX: window.scrollX,
+                scrollY: window.scrollY,
+                timestamp: Date.now()
+            });
+        }
+
+        function trackTouch(e) {
+            if (!mouseTrackingActive || !e.touches.length) return;
+            const touch = e.touches[0];
+            socket.emit('patient_click', {
+                x: touch.clientX,
+                y: touch.clientY,
+                type: 'touch',
+                timestamp: Date.now()
+            });
+        }
+
+        function trackTouchMove(e) {
+            if (!mouseTrackingActive || !e.touches.length) return;
+            const touch = e.touches[0];
+            socket.emit('patient_mouse_move', {
+                x: touch.clientX,
+                y: touch.clientY,
+                type: 'touch',
+                timestamp: Date.now()
+            });
+        }
+
+        function trackTouchEnd(e) {
+            if (!mouseTrackingActive) return;
+            socket.emit('patient_touch_end', {
+                timestamp: Date.now()
+            });
         }
 
         function simulateClick(x, y) {
-            const element = document.elementFromPoint(x, y);
+            // Convert coordinates based on screen scaling
+            const scaleX = window.innerWidth / (window.innerWidth * 0.4); // Match capture scale
+            const scaleY = window.innerHeight / (window.innerHeight * 0.4);
+            
+            const actualX = x * scaleX;
+            const actualY = y * scaleY;
+            
+            const element = document.elementFromPoint(actualX, actualY);
             if (element) {
-                element.click();
+                // Create a proper click event
+                const clickEvent = new MouseEvent('click', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: actualX,
+                    clientY: actualY
+                });
+                element.dispatchEvent(clickEvent);
+                
+                // Visual feedback
+                showRemoteClickFeedback(actualX, actualY);
             }
+        }
+
+        function showRemoteClickFeedback(x, y) {
+            const feedback = document.createElement('div');
+            feedback.style.position = 'fixed';
+            feedback.style.left = x + 'px';
+            feedback.style.top = y + 'px';
+            feedback.style.width = '30px';
+            feedback.style.height = '30px';
+            feedback.style.borderRadius = '50%';
+            feedback.style.background = 'rgba(0, 255, 0, 0.7)';
+            feedback.style.border = '2px solid #00ff00';
+            feedback.style.pointerEvents = 'none';
+            feedback.style.transform = 'translate(-50%, -50%)';
+            feedback.style.zIndex = '10000';
+            feedback.style.animation = 'pulse 0.5s ease-out';
+            
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                feedback.remove();
+            }, 1000);
         }
 
         // Handle doctor instructions

@@ -148,11 +148,56 @@
 .quadrant-3 { bottom: 0; left: 0; }
 .quadrant-4 { bottom: 0; right: 0; }
 
+/* Instructions scrolling for all pages */
+.instructions {
+    max-height: 40vh;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.instructions::-webkit-scrollbar {
+    width: 8px;
+}
+
+.instructions::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.instructions::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+.instructions::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Test instructions container */
+.test-instructions {
+    max-height: 40vh;
+    overflow-y: scroll;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}
+
 /* Mobile-friendly adjustments */
 @media (max-width: 768px) {
     body {
         overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+        width: 100%;
+        height: 100vh;
+    }
+
+    * {
+        box-sizing: border-box;
     }
 
     .test-grid {
@@ -172,10 +217,13 @@
         padding-left: 10px;
         padding-right: 10px;
         overflow-x: hidden;
+        width: 100%;
+        max-width: 100%;
     }
 
     .card {
         margin-bottom: 1rem;
+        width: 100%;
     }
 
     .btn {
@@ -197,11 +245,13 @@
         padding-bottom: 80px; /* Space for floating buttons */
         height: calc(100vh - 120px);
         position: relative;
+        width: 100%;
     }
 
     .test-card {
         min-height: 200px;
         touch-action: manipulation;
+        width: 100%;
     }
 
     .test-card .card-body {
@@ -218,21 +268,34 @@
 
     /* Better scrolling for test instructions */
     .instructions {
-        max-height: 90vh;
-        overflow-y: auto;
+        max-height: 40vh;
+        overflow-y: scroll;
         -webkit-overflow-scrolling: touch;
+        width: 95vw;
+        padding: 15px;
+    }
+
+    .test-instructions {
+        max-height: 40vh;
+        overflow-y: scroll;
+        -webkit-overflow-scrolling: touch;
+        width: 95vw;
+        padding: 15px;
     }
 
     /* Improve fullscreen on mobile */
     .test-container {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        width: 100vw;
+        height: 100vh;
     }
 
     /* Radio button improvements for mobile */
     .letter-option {
         min-height: 56px;
         touch-action: manipulation;
+        width: 100%;
     }
 
     .letter-option input[type="radio"] {
@@ -245,6 +308,22 @@
         max-height: 60vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+
+    /* Better radio container scrolling */
+    .radio-selection-container {
+        max-height: 50vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+
+    /* Full width for mobile */
+    .letter-option-group {
+        width: 100%;
+        max-width: 300px;
+        margin: 0 auto;
     }
 }
 
