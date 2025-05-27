@@ -10,7 +10,7 @@ deploymentTarget = "autoscale"
 run = ["sh", "-c", "run"]
 
 [workflows]
-runButton = "Project"
+runButton = "Run Flask Dev Server"
 
 [[workflows.workflow]]
 name = "Project"
@@ -119,6 +119,15 @@ args = "cd sparcs_test_dot && python app.py &"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "wait"
+
+[[workflows.workflow]]
+name = "Run Flask Dev Server"
+author = 43007011
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python main.py"
 
 [[ports]]
 localPort = 5000
