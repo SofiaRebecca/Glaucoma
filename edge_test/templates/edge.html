@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edge Detection Test</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #000;
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .test-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .edge-canvas {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: crosshair;
+            background: #111;
+        }
+        
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        
+        .test-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .exit-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .progress-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--bs-success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .edge-shape {
+            position: absolute;
+            border: 3px solid;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+        
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            min-width: 200px;
+        }
+        
+        .detection-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions" class="instructions">
+        <h2 class="mb-4">
+            <i class="fas fa-shapes me-2"></i>
+            Edge Detection Test
+        </h2>
+        <p class="mb-4">
+            This test evaluates your ability to detect edges and boundaries in visual stimuli.
+        </p>
+        <div class="mb-4">
+            <h5>Instructions:</h5>
+            <ul class="text-start">
+                <li>Geometric shapes with varying edge contrast will appear</li>
+                <li>Click on the edges of the shapes you can detect</li>
+                <li>Try to trace along the visible boundaries</li>
+                <li>The test will progressively reduce edge contrast</li>
+                <li>Complete as many detections as possible</li>
+            </ul>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="startTest()">
+            <i class="fas fa-play me-2"></i>
+            Start Test
+        </button>
+    </div>
+    
+    <div id="test-container" class="test-container" style="display: none;">
+        <div class="test-info">
+            <div>Shape: <span id="current-shape">0</span> / 20</div>
+            <div>Detected: <span id="detected-count">0</span></div>
+            <div>Accuracy: <span id="accuracy">0%</span></div>
+        </div>
+        
+        <canvas id="edge-canvas" class="edge-canvas" width="800" height="600"></canvas>
+        
+        <div class="control-panel">
+            <div class="mb-2">
+                <small>Edge Contrast: <span id="contrast-level">100%</span></small>
+            </div>
+            <div class="mb-2">
+                <small>Shape Type: <span id="shape-type">Circle</span></small>
+            </div>
+            <button class="btn btn-sm btn-warning w-100" onclick="skipShape()">
+                <i class="fas fa-forward me-1"></i>
+                Skip Shape
+            </button>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        
+        <div id="detection-feedback" class="detection-feedback">
+            <h5 id="feedback-title">Shape Detected!</h5>
+            <p id="feedback-text">Good detection accuracy</p>
+        </div>
+        
+        <button class="exit-btn" onclick="exitTest()">
+            <i class="fas fa-times"></i> Exit
+        </button>
+    </div>
+
+    <script>
+        class EdgeDetectionTest {
+            constructor() {
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
+                this.startTime = null;
+                this.currentShape = 0;
+                this.totalShapes = 20;
+                this.detectedCount = 0;
+                this.responses = [];
+                this.canvas = null;
+                this.ctx = null;
+                this.currentShapeData = null;
+                this.isDetecting = false;
+                this.detectionPoints = [];
+                this.shapeStartTime = null;
+                
+                // Test parameters
+                this.contrastLevels = [1.0, 0.8, 0.6, 0.4, 0.3, 0.2];
+                this.currentContrastIndex = 0;
+                this.shapeTypes = ['circle', 'rectangle', 'triangle', 'ellipse', 'polygon'];
+                
+                this.initializeCanvas();
+            }
+            
+            initializeCanvas() {
+                this.canvas = document.getElementById('edge-canvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                // Add mouse event listeners
+                this.canvas.addEventListener('mousedown', (e) => this.startDetection(e));
+                this.canvas.addEventListener('mousemove', (e) => this.continueDetection(e));
+                this.canvas.addEventListener('mouseup', (e) => this.endDetection(e));
+                this.canvas.addEventListener('click', (e) => this.handleClick(e));
+            }
+            
+            start() {
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('test-container').style.display = 'flex';
+                this.startTime = new Date();
+                this.nextShape();
+            }
+            
+            nextShape() {
+                if (this.currentShape >= this.totalShapes) {
+                    this.completeTest();
+                    return;
+                }
+                
+                // Update display
+                document.getElementById('current-shape').textContent = this.currentShape + 1;
+                document.getElementById('detected-count').textContent = this.detectedCount;
+                
+                const accuracy = this.currentShape > 0 ? 
+                    Math.round((this.detectedCount / this.currentShape) * 100) : 0;
+                document.getElementById('accuracy').textContent = accuracy + '%';
+                
+                // Update progress
+                const progress = (this.currentShape / this.totalShapes) * 100;
+                document.getElementById('progress-fill').style.width = progress + '%';
+                
+                // Generate new shape
+                this.generateShape();
+                this.shapeStartTime = Date.now();
+                
+                // Auto-advance after 10 seconds if no detection
+                setTimeout(() => {
+                    if (this.currentShape === this.currentShape && !this.isDetecting) {
+                        this.skipShape();
+                    }
+                }, 10000);
+            }
+            
+            generateShape() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Select shape type and parameters
+                const shapeType = this.shapeTypes[Math.floor(Math.random() * this.shapeTypes.length)];
+                const contrast = this.contrastLevels[this.currentContrastIndex];
+                
+                // Update display
+                document.getElementById('shape-type').textContent = shapeType.charAt(0).toUpperCase() + shapeType.slice(1);
+                document.getElementById('contrast-level').textContent = Math.round(contrast * 100) + '%';
+                
+                // Generate shape parameters
+                const centerX = 200 + Math.random() * 400;
+                const centerY = 150 + Math.random() * 300;
+                const size = 50 + Math.random() * 100;
+                
+                this.currentShapeData = {
+                    type: shapeType,
+                    centerX: centerX,
+                    centerY: centerY,
+                    size: size,
+                    contrast: contrast,
+                    color: this.getContrastColor(contrast)
+                };
+                
+                // Draw shape
+                this.drawShape(this.currentShapeData);
+                
+                // Reset detection state
+                this.detectionPoints = [];
+                this.isDetecting = false;
+            }
+            
+            getContrastColor(contrast) {
+                const grayValue = Math.floor(255 * contrast);
+                return `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+            }
+            
+            drawShape(shape) {
+                this.ctx.strokeStyle = shape.color;
+                this.ctx.lineWidth = 3;
+                this.ctx.fillStyle = 'transparent';
+                
+                this.ctx.beginPath();
+                
+                switch (shape.type) {
+                    case 'circle':
+                        this.ctx.arc(shape.centerX, shape.centerY, shape.size, 0, 2 * Math.PI);
+                        break;
+                        
+                    case 'rectangle':
+                        this.ctx.rect(
+                            shape.centerX - shape.size,
+                            shape.centerY - shape.size / 2,
+                            shape.size * 2,
+                            shape.size
+                        );
+                        break;
+                        
+                    case 'triangle':
+                        this.ctx.moveTo(shape.centerX, shape.centerY - shape.size);
+                        this.ctx.lineTo(shape.centerX - shape.size, shape.centerY + shape.size);
+                        this.ctx.lineTo(shape.centerX + shape.size, shape.centerY + shape.size);
+                        this.ctx.closePath();
+                        break;
+                        
+                    case 'ellipse':
+                        this.ctx.ellipse(shape.centerX, shape.centerY, shape.size, shape.size * 0.6, 0, 0, 2 * Math.PI);
+                        break;
+                        
+                    case 'polygon':
+                        const sides = 6;
+                        for (let i = 0; i < sides; i++) {
+                            const angle = (i * 2 * Math.PI) / sides;
+                            const x = shape.centerX + shape.size * Math.cos(angle);
+                            const y = shape.centerY + shape.size * Math.sin(angle);
+                            
+                            if (i === 0) {
+                                this.ctx.moveTo(x, y);
+                            } else {
+                                this.ctx.lineTo(x, y);
+                            }
+                        }
+                        this.ctx.closePath();
+                        break;
+                }
+                
+                this.ctx.stroke();
+            }
+            
+            startDetection(e) {
+                this.isDetecting = true;
+                this.detectionPoints = [];
+                const point = this.getMousePos(e);
+                this.detectionPoints.push(point);
+            }
+            
+            continueDetection(e) {
+                if (!this.isDetecting) return;
+                
+                const point = this.getMousePos(e);
+                this.detectionPoints.push(point);
+                
+                // Draw detection trace
+                this.ctx.strokeStyle = '#00ff00';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                
+                if (this.detectionPoints.length > 1) {
+                    const prev = this.detectionPoints[this.detectionPoints.length - 2];
+                    this.ctx.moveTo(prev.x, prev.y);
+                    this.ctx.lineTo(point.x, point.y);
+                    this.ctx.stroke();
+                }
+            }
+            
+            endDetection(e) {
+                if (!this.isDetecting) return;
+                
+                this.isDetecting = false;
+                this.evaluateDetection();
+            }
+            
+            handleClick(e) {
+                if (!this.isDetecting) {
+                    // Simple click detection
+                    const point = this.getMousePos(e);
+                    this.detectionPoints = [point];
+                    this.evaluateDetection();
+                }
+            }
+            
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+            
+            evaluateDetection() {
+                const responseTime = Date.now() - this.shapeStartTime;
+                let isCorrect = false;
+                let accuracy = 0;
+                
+                if (this.detectionPoints.length > 0) {
+                    // Check if detection points are near the shape edge
+                    accuracy = this.calculateDetectionAccuracy();
+                    isCorrect = accuracy > 0.3; // 30% threshold for successful detection
+                }
+                
+                if (isCorrect) {
+                    this.detectedCount++;
+                    this.showFeedback('Shape Detected!', `Accuracy: ${Math.round(accuracy * 100)}%`, 'success');
+                } else {
+                    this.showFeedback('Detection Missed', 'Try to trace along the edge', 'warning');
+                }
+                
+                // Record response
+                this.responses.push({
+                    shapeIndex: this.currentShape,
+                    shapeType: this.currentShapeData.type,
+                    contrast: this.currentShapeData.contrast,
+                    isCorrect: isCorrect,
+                    accuracy: accuracy,
+                    responseTime: responseTime,
+                    detectionPoints: this.detectionPoints.length,
+                    timestamp: new Date()
+                });
+                
+                // Adjust contrast for next shape
+                if (isCorrect && this.currentContrastIndex < this.contrastLevels.length - 1) {
+                    this.currentContrastIndex++;
+                } else if (!isCorrect && this.currentContrastIndex > 0) {
+                    this.currentContrastIndex--;
+                }
+                
+                // Move to next shape after delay
+                setTimeout(() => {
+                    this.currentShape++;
+                    this.nextShape();
+                }, 2000);
+            }
+            
+            calculateDetectionAccuracy() {
+                if (this.detectionPoints.length === 0) return 0;
+                
+                let totalDistance = 0;
+                let validPoints = 0;
+                
+                for (let point of this.detectionPoints) {
+                    const distance = this.distanceToShapeEdge(point);
+                    if (distance < 30) { // Within 30 pixels of edge
+                        validPoints++;
+                        totalDistance += Math.max(0, 30 - distance) / 30;
+                    }
+                }
+                
+                return validPoints > 0 ? totalDistance / this.detectionPoints.length : 0;
+            }
+            
+            distanceToShapeEdge(point) {
+                const shape = this.currentShapeData;
+                const dx = point.x - shape.centerX;
+                const dy = point.y - shape.centerY;
+                
+                switch (shape.type) {
+                    case 'circle':
+                        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+                        return Math.abs(distanceFromCenter - shape.size);
+                        
+                    case 'rectangle':
+                        const halfWidth = shape.size;
+                        const halfHeight = shape.size / 2;
+                        const edgeDistX = Math.abs(Math.abs(dx) - halfWidth);
+                        const edgeDistY = Math.abs(Math.abs(dy) - halfHeight);
+                        return Math.min(edgeDistX, edgeDistY);
+                        
+                    default:
+                        // Approximate for other shapes
+                        const approxDistance = Math.sqrt(dx * dx + dy * dy);
+                        return Math.abs(approxDistance - shape.size);
+                }
+            }
+            
+            showFeedback(title, text, type) {
+                const feedback = document.getElementById('detection-feedback');
+                const titleEl = document.getElementById('feedback-title');
+                const textEl = document.getElementById('feedback-text');
+                
+                titleEl.textContent = title;
+                textEl.textContent = text;
+                feedback.style.display = 'block';
+                
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 1500);
+            }
+            
+            skipShape() {
+                // Record as missed
+                this.responses.push({
+                    shapeIndex: this.currentShape,
+                    shapeType: this.currentShapeData.type,
+                    contrast: this.currentShapeData.contrast,
+                    isCorrect: false,
+                    accuracy: 0,
+                    responseTime: Date.now() - this.shapeStartTime,
+                    detectionPoints: 0,
+                    skipped: true,
+                    timestamp: new Date()
+                });
+                
+                this.currentShape++;
+                this.nextShape();
+            }
+            
+            completeTest() {
+                const endTime = new Date();
+                const duration = Math.round((endTime - this.startTime) / 1000);
+                const accuracy = Math.round((this.detectedCount / this.totalShapes) * 100);
+                
+                const testData = {
+                    patient_name: this.patientName,
+                    duration: duration,
+                    total_points: this.totalShapes,
+                    correct_points: this.detectedCount,
+                    start_time: this.startTime.toLocaleTimeString(),
+                    end_time: endTime.toLocaleTimeString(),
+                    responses: this.responses,
+                    edge_detection_data: {
+                        final_contrast_level: this.contrastLevels[this.currentContrastIndex],
+                        shape_types_tested: [...new Set(this.responses.map(r => r.shapeType))],
+                        average_accuracy: this.responses.reduce((sum, r) => sum + r.accuracy, 0) / this.responses.length
+                    }
+                };
+                
+                // Save results
+                this.saveResults(testData);
+                
+                // Show results
+                this.showResults(testData);
+            }
+            
+            saveResults(data) {
+                fetch('/api/save_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Results saved:', result);
+                })
+                .catch(error => {
+                    console.error('Error saving results:', error);
+                });
+            }
+            
+            showResults(data) {
+                const minContrast = Math.min(...this.responses.map(r => r.contrast));
+                
+                document.body.innerHTML = `
+                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                <h2>Edge Detection Test Completed</h2>
+                            </div>
+                            
+                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
+                                <div class="card-body">
+                                    <h5 class="card-title">Test Results</h5>
+                                    <hr>
+                                    <div class="row text-center mb-3">
+                                        <div class="col-3">
+                                            <h3 class="text-primary">${Math.round((data.correct_points / data.total_points) * 100)}%</h3>
+                                            <small>Detection Rate</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-info">${data.duration}s</h3>
+                                            <small>Duration</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-success">${data.correct_points}/${data.total_points}</h3>
+                                            <small>Score</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-warning">${Math.round(minContrast * 100)}%</h3>
+                                            <small>Min Contrast</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-start">
+                                        <h6>Edge Detection Analysis:</h6>
+                                        <p class="text-muted">
+                                            Lowest detectable contrast: ${Math.round(minContrast * 100)}%<br>
+                                            Average detection accuracy: ${Math.round(data.edge_detection_data.average_accuracy * 100)}%<br>
+                                            ${minContrast < 0.3 ? 
+                                                'Excellent edge detection capability.' :
+                                                minContrast < 0.6 ?
+                                                'Good edge detection performance.' :
+                                                'Reduced edge detection sensitivity detected. Consider follow-up evaluation.'
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:8000/patient'">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to Tests
+                                </button>
+                                <button class="btn btn-success btn-lg" onclick="location.reload()">
+                                    <i class="fas fa-redo me-2"></i>
+                                    Retake Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        let test = null;
+        
+        function startTest() {
+            test = new EdgeDetectionTest();
+            test.start();
+        }
+        
+        function skipShape() {
+            if (test) {
+                test.skipShape();
+            }
+        }
+        
+        function exitTest() {
+            if (confirm('Are you sure you want to exit this test?')) {
+                window.location.href = 'http://' + window.location.hostname + ':8000/patient';
+            }
+        }
+        
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                exitTest();
+            } else if (e.key === ' ' && test) {
+                e.preventDefault();
+                test.skipShape();
+            }
+        });
+    </script>
+</body>
+</html>

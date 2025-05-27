@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pelli-Robinson Contrast Sensitivity Test</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #000;
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .test-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .letter-row {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            margin-bottom: 30px;
+            user-select: none;
+            text-align: center;
+            letter-spacing: 15px;
+            line-height: 1.2;
+        }
+        
+        .letter-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+        }
+        
+        .letter-input:focus {
+            border-color: var(--bs-primary);
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        
+        .language-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .test-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .exit-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .contrast-info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .input-row {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .row-controls {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+        }
+        
+        .progress-display {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions" class="instructions">
+        <h2 class="mb-4">
+            <i class="fas fa-low-vision me-2"></i>
+            Pelli-Robinson Contrast Sensitivity Test
+        </h2>
+        <p class="mb-4">
+            This test measures your ability to read letters at decreasing contrast levels.
+        </p>
+        <div class="mb-4">
+            <h5>Instructions:</h5>
+            <ul class="text-start">
+                <li>Letter rows will be displayed at different contrast levels</li>
+                <li>Type the letters you can see in the input boxes below each row</li>
+                <li>If you cannot see a letter clearly, make your best guess</li>
+                <li>Press Next to move to the next row when ready</li>
+                <li>The test continues until letters become too faint to read</li>
+            </ul>
+        </div>
+        <div class="mb-4">
+            <h6>Select Language:</h6>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary" id="english-btn" onclick="setLanguage('english')">English</button>
+                <button type="button" class="btn btn-outline-primary" id="kannada-btn" onclick="setLanguage('kannada')">ಕನ್ನಡ</button>
+            </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="startTest()" id="start-btn" disabled>
+            <i class="fas fa-play me-2"></i>
+            Start Test
+        </button>
+    </div>
+    
+    <div id="test-container" class="test-container" style="display: none;">
+        <div class="test-info">
+            <div>Row: <span id="current-row">0</span> / 8</div>
+            <div>Correct: <span id="correct-count">0</span></div>
+            <div>Language: <span id="current-language">English</span></div>
+        </div>
+        
+        <div class="language-toggle">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-light btn-sm" id="test-english-btn" onclick="switchLanguage('english')">English</button>
+                <button type="button" class="btn btn-outline-light btn-sm" id="test-kannada-btn" onclick="switchLanguage('kannada')">ಕನ್ನಡ</button>
+            </div>
+        </div>
+        
+        <div class="progress-display">
+            <div>Contrast Level: <span id="contrast-level">2.25</span> log units</div>
+            <div>Current Sensitivity: <span id="current-sensitivity">Normal</span></div>
+        </div>
+        
+        <div id="letter-display" class="letter-row">
+            <!-- Letters will be displayed here -->
+        </div>
+        
+        <div class="input-row" id="input-row">
+            <!-- Input boxes will be generated here -->
+        </div>
+        
+        <div class="row-controls">
+            <button class="btn btn-success" onclick="nextRow()" id="next-btn">
+                <i class="fas fa-arrow-right me-2"></i>
+                Next Row
+            </button>
+            <button class="btn btn-warning" onclick="skipRow()">
+                <i class="fas fa-forward me-2"></i>
+                Can't See
+            </button>
+            <button class="btn btn-secondary" onclick="clearInputs()">
+                <i class="fas fa-eraser me-2"></i>
+                Clear
+            </button>
+        </div>
+        
+        <div class="contrast-info">
+            <div>Row Progress: <span id="row-progress">0/6</span></div>
+            <div>Threshold: <span id="threshold-estimate">TBD</span></div>
+        </div>
+        
+        <button class="exit-btn" onclick="exitTest()">
+            <i class="fas fa-times"></i> Exit
+        </button>
+    </div>
+
+    <script>
+        class PelliRobinsonTest {
+            constructor() {
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
+                this.startTime = null;
+                this.currentRow = 0;
+                this.totalRows = 8;
+                this.correctCount = 0;
+                this.responses = [];
+                this.currentLanguage = 'english';
+                this.rowStartTime = null;
+                
+                // Pelli-Robinson parameters
+                this.contrastLevels = [2.25, 2.10, 1.95, 1.80, 1.65, 1.50, 1.35, 1.20]; // log units
+                this.lettersPerRow = 6;
+                
+                // Letter sets for both languages
+                this.letterSets = {
+                    english: ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'],
+                    kannada: ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಎ', 'ಏ', 'ಒ', 'ಓ']
+                };
+                
+                this.currentRowLetters = [];
+                this.thresholdReached = false;
+            }
+            
+            setLanguage(language) {
+                this.currentLanguage = language;
+                
+                // Update button states
+                document.getElementById('english-btn').className = 
+                    language === 'english' ? 'btn btn-primary' : 'btn btn-outline-primary';
+                document.getElementById('kannada-btn').className = 
+                    language === 'kannada' ? 'btn btn-primary' : 'btn btn-outline-primary';
+                
+                // Enable start button
+                document.getElementById('start-btn').disabled = false;
+            }
+            
+            switchLanguage(language) {
+                if (language === this.currentLanguage) return;
+                
+                this.currentLanguage = language;
+                
+                // Update display
+                document.getElementById('current-language').textContent = 
+                    language === 'english' ? 'English' : 'ಕನ್ನಡ';
+                
+                // Update button states
+                document.getElementById('test-english-btn').className = 
+                    language === 'english' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
+                document.getElementById('test-kannada-btn').className = 
+                    language === 'kannada' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
+                
+                // Regenerate current row with new language
+                this.showCurrentRow();
+            }
+            
+            start() {
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('test-container').style.display = 'flex';
+                this.startTime = new Date();
+                this.showCurrentRow();
+            }
+            
+            showCurrentRow() {
+                if (this.currentRow >= this.totalRows || this.thresholdReached) {
+                    this.completeTest();
+                    return;
+                }
+                
+                // Update display
+                document.getElementById('current-row').textContent = this.currentRow + 1;
+                document.getElementById('correct-count').textContent = this.correctCount;
+                
+                const contrastLevel = this.contrastLevels[this.currentRow];
+                document.getElementById('contrast-level').textContent = contrastLevel.toFixed(2);
+                
+                // Update sensitivity estimate
+                this.updateSensitivityEstimate(contrastLevel);
+                
+                // Generate random letters for this row
+                this.generateRowLetters();
+                
+                // Display letters with appropriate contrast
+                this.displayLetters(contrastLevel);
+                
+                // Create input boxes
+                this.createInputBoxes();
+                
+                this.rowStartTime = Date.now();
+                
+                // Update progress
+                document.getElementById('row-progress').textContent = `${this.currentRow + 1}/${this.totalRows}`;
+            }
+            
+            generateRowLetters() {
+                const letterSet = this.letterSets[this.currentLanguage];
+                this.currentRowLetters = [];
+                
+                for (let i = 0; i < this.lettersPerRow; i++) {
+                    const randomLetter = letterSet[Math.floor(Math.random() * letterSet.length)];
+                    this.currentRowLetters.push(randomLetter);
+                }
+            }
+            
+            displayLetters(contrastLevel) {
+                const letterDisplay = document.getElementById('letter-display');
+                
+                // Calculate contrast ratio from log units
+                const contrastRatio = Math.pow(10, -contrastLevel);
+                const grayValue = Math.floor(255 * contrastRatio);
+                
+                letterDisplay.innerHTML = this.currentRowLetters.join('&nbsp;&nbsp;&nbsp;');
+                letterDisplay.style.color = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                letterDisplay.style.fontSize = '72px';
+            }
+            
+            createInputBoxes() {
+                const inputRow = document.getElementById('input-row');
+                inputRow.innerHTML = '';
+                
+                for (let i = 0; i < this.lettersPerRow; i++) {
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.className = 'letter-input';
+                    input.maxLength = 1;
+                    input.id = `input-${i}`;
+                    
+                    // Auto-advance to next input
+                    input.addEventListener('input', (e) => {
+                        if (e.target.value && i < this.lettersPerRow - 1) {
+                            document.getElementById(`input-${i + 1}`).focus();
+                        }
+                    });
+                    
+                    // Handle backspace
+                    input.addEventListener('keydown', (e) => {
+                        if (e.key === 'Backspace' && !e.target.value && i > 0) {
+                            document.getElementById(`input-${i - 1}`).focus();
+                        } else if (e.key === 'Enter') {
+                            this.nextRow();
+                        }
+                    });
+                    
+                    inputRow.appendChild(input);
+                }
+                
+                // Focus first input
+                document.getElementById('input-0').focus();
+            }
+            
+            nextRow() {
+                const userInputs = this.getUserInputs();
+                const responseTime = Date.now() - this.rowStartTime;
+                
+                // Calculate accuracy for this row
+                let correctLetters = 0;
+                for (let i = 0; i < this.lettersPerRow; i++) {
+                    if (userInputs[i] && userInputs[i].toUpperCase() === this.currentRowLetters[i].toUpperCase()) {
+                        correctLetters++;
+                    }
+                }
+                
+                const rowAccuracy = correctLetters / this.lettersPerRow;
+                
+                // Record response
+                this.responses.push({
+                    rowIndex: this.currentRow,
+                    contrastLevel: this.contrastLevels[this.currentRow],
+                    correctLetters: this.currentRowLetters,
+                    userInputs: userInputs,
+                    correctCount: correctLetters,
+                    accuracy: rowAccuracy,
+                    language: this.currentLanguage,
+                    responseTime: responseTime,
+                    timestamp: new Date()
+                });
+                
+                // Update total correct count
+                this.correctCount += correctLetters;
+                
+                // Check if threshold reached (less than 3 letters correct)
+                if (correctLetters < 3) {
+                    this.thresholdReached = true;
+                    this.updateThresholdEstimate();
+                }
+                
+                // Move to next row
+                this.currentRow++;
+                
+                setTimeout(() => {
+                    this.showCurrentRow();
+                }, 500);
+            }
+            
+            skipRow() {
+                // Record as all incorrect
+                const userInputs = new Array(this.lettersPerRow).fill('');
+                const responseTime = Date.now() - this.rowStartTime;
+                
+                this.responses.push({
+                    rowIndex: this.currentRow,
+                    contrastLevel: this.contrastLevels[this.currentRow],
+                    correctLetters: this.currentRowLetters,
+                    userInputs: userInputs,
+                    correctCount: 0,
+                    accuracy: 0,
+                    language: this.currentLanguage,
+                    responseTime: responseTime,
+                    skipped: true,
+                    timestamp: new Date()
+                });
+                
+                // Mark threshold reached
+                this.thresholdReached = true;
+                this.updateThresholdEstimate();
+                
+                this.currentRow++;
+                this.showCurrentRow();
+            }
+            
+            clearInputs() {
+                for (let i = 0; i < this.lettersPerRow; i++) {
+                    const input = document.getElementById(`input-${i}`);
+                    if (input) {
+                        input.value = '';
+                    }
+                }
+                document.getElementById('input-0').focus();
+            }
+            
+            getUserInputs() {
+                const inputs = [];
+                for (let i = 0; i < this.lettersPerRow; i++) {
+                    const input = document.getElementById(`input-${i}`);
+                    inputs.push(input ? input.value : '');
+                }
+                return inputs;
+            }
+            
+            updateSensitivityEstimate(contrastLevel) {
+                let sensitivity = 'Normal';
+                
+                if (contrastLevel > 2.0) {
+                    sensitivity = 'Normal';
+                } else if (contrastLevel > 1.8) {
+                    sensitivity = 'Mild Reduction';
+                } else if (contrastLevel > 1.6) {
+                    sensitivity = 'Moderate Reduction';
+                } else if (contrastLevel > 1.4) {
+                    sensitivity = 'Significant Reduction';
+                } else {
+                    sensitivity = 'Severe Reduction';
+                }
+                
+                document.getElementById('current-sensitivity').textContent = sensitivity;
+            }
+            
+            updateThresholdEstimate() {
+                // Calculate threshold based on last successful row
+                let thresholdLevel = 2.25; // Default high value
+                
+                for (let i = this.responses.length - 1; i >= 0; i--) {
+                    if (this.responses[i].correctCount >= 3) {
+                        thresholdLevel = this.responses[i].contrastLevel;
+                        break;
+                    }
+                }
+                
+                document.getElementById('threshold-estimate').textContent = thresholdLevel.toFixed(2) + ' log units';
+            }
+            
+            completeTest() {
+                const endTime = new Date();
+                const duration = Math.round((endTime - this.startTime) / 1000);
+                
+                // Calculate final contrast sensitivity
+                let contrastSensitivity = 2.25; // Default starting value
+                let logUnits = 2.25;
+                
+                // Find the lowest contrast level where at least 3 letters were read correctly
+                for (let i = this.responses.length - 1; i >= 0; i--) {
+                    if (this.responses[i].correctCount >= 3) {
+                        contrastSensitivity = this.responses[i].contrastLevel;
+                        logUnits = contrastSensitivity;
+                        break;
+                    }
+                }
+                
+                const testData = {
+                    patient_name: this.patientName,
+                    duration: duration,
+                    total_points: this.totalRows * this.lettersPerRow,
+                    correct_points: this.correctCount,
+                    language: this.currentLanguage,
+                    contrast_sensitivity: contrastSensitivity,
+                    log_units: logUnits,
+                    start_time: this.startTime.toLocaleTimeString(),
+                    end_time: endTime.toLocaleTimeString(),
+                    responses: this.responses
+                };
+                
+                // Save results
+                this.saveResults(testData);
+                
+                // Show results
+                this.showResults(testData);
+            }
+            
+            saveResults(data) {
+                fetch('/api/save_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Results saved:', result);
+                })
+                .catch(error => {
+                    console.error('Error saving results:', error);
+                });
+            }
+            
+            showResults(data) {
+                const sensitivityDescription = this.getSensitivityDescription(data.contrast_sensitivity);
+                
+                document.body.innerHTML = `
+                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                <h2>Pelli-Robinson Test Completed</h2>
+                            </div>
+                            
+                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
+                                <div class="card-body">
+                                    <h5 class="card-title">Test Results</h5>
+                                    <hr>
+                                    <div class="row text-center mb-3">
+                                        <div class="col-3">
+                                            <h3 class="text-primary">${Math.round((data.correct_points / data.total_points) * 100)}%</h3>
+                                            <small>Letter Accuracy</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-info">${data.duration}s</h3>
+                                            <small>Duration</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-success">${data.log_units.toFixed(2)}</h3>
+                                            <small>Log Units</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-warning">${data.correct_points}/${data.total_points}</h3>
+                                            <small>Score</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="text-start">
+                                        <h6>Contrast Sensitivity Analysis:</h6>
+                                        <p class="text-muted">
+                                            Language: ${data.language === 'english' ? 'English' : 'ಕನ್ನಡ'}<br>
+                                            Contrast threshold: ${data.contrast_sensitivity.toFixed(2)} log units<br>
+                                            Clinical assessment: ${sensitivityDescription}<br>
+                                            ${data.contrast_sensitivity >= 1.8 ? 
+                                                'Normal contrast sensitivity detected.' :
+                                                data.contrast_sensitivity >= 1.5 ?
+                                                'Mild to moderate contrast sensitivity reduction.' :
+                                                'Significant contrast sensitivity impairment detected. Recommend ophthalmologic evaluation.'
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:8000/patient'">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to Tests
+                                </button>
+                                <button class="btn btn-success btn-lg" onclick="location.reload()">
+                                    <i class="fas fa-redo me-2"></i>
+                                    Retake Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            getSensitivityDescription(logUnits) {
+                if (logUnits >= 2.0) return 'Normal';
+                if (logUnits >= 1.8) return 'Mild Reduction';
+                if (logUnits >= 1.6) return 'Moderate Reduction';
+                if (logUnits >= 1.4) return 'Significant Reduction';
+                return 'Severe Reduction';
+            }
+        }
+        
+        let test = null;
+        
+        function setLanguage(language) {
+            if (!test) {
+                test = new PelliRobinsonTest();
+            }
+            test.setLanguage(language);
+        }
+        
+        function switchLanguage(language) {
+            if (test) {
+                test.switchLanguage(language);
+            }
+        }
+        
+        function startTest() {
+            if (!test) {
+                test = new PelliRobinsonTest();
+            }
+            test.start();
+        }
+        
+        function nextRow() {
+            if (test) {
+                test.nextRow();
+            }
+        }
+        
+        function skipRow() {
+            if (test) {
+                test.skipRow();
+            }
+        }
+        
+        function clearInputs() {
+            if (test) {
+                test.clearInputs();
+            }
+        }
+        
+        function exitTest() {
+            if (confirm('Are you sure you want to exit this test?')) {
+                window.location.href = 'http://' + window.location.hostname + ':8000/patient';
+            }
+        }
+        
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                exitTest();
+            }
+        });
+    </script>
+</body>
+</html>

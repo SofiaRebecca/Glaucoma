@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <title>Pattern Recognition Test</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #000;
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .test-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .pattern-canvas {
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: crosshair;
+            background: #111;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+
+        .test-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .exit-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .pattern-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .progress-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        .tracing-path {
+            stroke: #00ff00;
+            stroke-width: 3;
+            fill: none;
+            opacity: 0.7;
+        }
+
+        .pattern-shape {
+            stroke: rgba(255, 255, 255, 0.8);
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .overlapping-shape {
+            stroke: rgba(255, 255, 0, 0.6);
+            stroke-width: 2;
+            fill: none;
+        }
+
+        .target-shape {
+            stroke: rgba(0, 255, 255, 0.8);
+            stroke-width: 3;
+            fill: none;
+        }
+
+        .completion-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .exit-btn:hover {
+            background: rgba(220, 53, 69, 1);
+        }
+
+        /* Mobile fullscreen button */
+        #test-fullscreen-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 123, 255, 0.8);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1000;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions" class="instructions">
+        <h2 class="mb-4">
+            <i class="fas fa-puzzle-piece me-2"></i>
+            Pattern Recognition Test
+        </h2>
+        <p class="mb-4">
+            This test evaluates your ability to identify and trace overlapping patterns and shapes.
+        </p>
+        <div class="mb-4">
+            <h5>Instructions:</h5>
+            <ul class="text-start">
+                <li>Multiple overlapping shapes will be displayed</li>
+                <li>A target shape will be highlighted in cyan</li>
+                <li>Trace the outline of the target shape by clicking and dragging</li>
+                <li>Try to follow the shape's boundary as accurately as possible</li>
+                <li>Complete the tracing within the time limit</li>
+            </ul>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="startTest()">
+            <i class="fas fa-play me-2"></i>
+            Start Test
+        </button>
+    </div>
+
+    <div id="test-container" class="test-container" style="display: none;">
+        <div class="test-info">
+            <div>Pattern: <span id="current-pattern">0</span> / 15</div>
+            <div>Traced: <span id="traced-count">0</span></div>
+            <div>Accuracy: <span id="accuracy">0%</span></div>
+        </div>
+
+        <svg id="pattern-canvas" class="pattern-canvas" width="800" height="600">
+            <!-- Patterns will be drawn here -->
+        </svg>
+
+        <div class="pattern-controls">
+            <button class="btn btn-sm btn-success" onclick="completeTracing()">
+                <i class="fas fa-check me-1"></i>
+                Complete
+            </button>
+            <button class="btn btn-sm btn-warning" onclick="clearTracing()">
+                <i class="fas fa-eraser me-1"></i>
+                Clear
+            </button>
+            <button class="btn btn-sm btn-secondary" onclick="skipPattern()">
+                <i class="fas fa-forward me-1"></i>
+                Skip
+            </button>
+        </div>
+
+        <div class="progress-indicator">
+            <div class="mb-2">
+                <small>Time: <span id="time-remaining">30s</span></small>
+                <div class="progress" style="height: 5px;">
+                    <div class="progress-bar" id="time-progress" style="width: 100%"></div>
+                </div>
+            </div>
+            <div>
+                <small>Complexity: <span id="complexity-level">Easy</span></small>
+            </div>
+        </div>
+
+        <div id="completion-feedback" class="completion-feedback">
+            <h5 id="feedback-title">Pattern Traced!</h5>
+            <p id="feedback-text">Good tracing accuracy</p>
+        </div>
+
+        <button class="exit-btn" onclick="exitTest()">
+            <i class="fas fa-times"></i> Exit
+        </button>
+    </div>
+
+    <!-- Mobile fullscreen floating action button -->
+    <button id="test-fullscreen-fab" onclick="toggleFullscreen()" style="display:none">
+        <i class="fas fa-expand"></i>
+    </button>
+
+    <script>
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Auto-hide address bar on mobile load
+        window.addEventListener('load', function() {
+            if (isMobileDevice()) {
+                setTimeout(() => {
+                    window.scrollTo(0, 1);
+                    document.body.style.minHeight = '100vh';
+                }, 100);
+            }
+        });
+
+        // Handle orientation change
+        window.addEventListener('orientationchange', function() {
+            if (isMobileDevice()) {
+                setTimeout(() => {
+                    window.scrollTo(0, 1);
+                }, 500);
+            }
+        });
+
+        function toggleFullscreen() {
+            const elem = document.documentElement;
+            const fab = document.getElementById('test-fullscreen-fab');
+
+            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                } else if (elem.mozRequestFullScreen) {
+                    elem.mozRequestFullScreen();
+                } else if (elem.msRequestFullscreen) {
+                    elem.msRequestFullscreen();
+                }
+
+                // For mobile devices, also hide address bar
+                if (isMobileDevice()) {
+                    setTimeout(() => {
+                        window.scrollTo(0, 1);
+                        document.body.style.height = '100vh';
+                        document.body.style.overflow = 'hidden';
+                    }, 100);
+                }
+
+                if (fab) fab.innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+
+                if (fab) fab.innerHTML = '<i class="fas fa-expand"></i>';
+            }
+        }
+        class PatternRecognitionTest {
+            constructor() {
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
+                this.startTime = null;
+                this.currentPattern = 0;
+                this.totalPatterns = 15;
+                this.tracedCount = 0;
+                this.responses = [];
+                this.canvas = null;
+                this.currentPatternData = null;
+                this.isTracing = false;
+                this.tracingPath = [];
+                this.patternStartTime = null;
+                this.timeLimit = 30000; // 30 seconds per pattern
+                this.timeRemaining = this.timeLimit;
+                this.timer = null;
+
+                // Pattern complexity levels
+                this.complexityLevels = [
+                    { name: 'Easy', shapes: 2, overlaps: 1 },
+                    { name: 'Medium', shapes: 3, overlaps: 2 },
+                    { name: 'Hard', shapes: 4, overlaps: 3 }
+                ];
+
+                this.shapeTypes = ['circle', 'rectangle', 'triangle', 'diamond', 'star', 'hexagon'];
+
+                this.initializeCanvas();
+            }
+
+            initializeCanvas() {
+                this.canvas = document.getElementById('pattern-canvas');
+
+                // Add mouse event listeners
+                this.canvas.addEventListener('mousedown', (e) => this.startTracing(e));
+                this.canvas.addEventListener('mousemove', (e) => this.continueTracing(e));
+                this.canvas.addEventListener('mouseup', (e) => this.endTracing(e));
+
+                // Prevent context menu
+                this.canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            start() {
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('test-container').style.display = 'flex';
+                this.startTime = new Date();
+                
+                // Show mobile fullscreen button during test
+                if (isMobileDevice()) {
+                    document.getElementById('test-fullscreen-fab').style.display = 'block';
+                }
+                
+                this.nextPattern();
+            }
+
+            nextPattern() {
+                if (this.currentPattern >= this.totalPatterns) {
+                    this.completeTest();
+                    return;
+                }
+
+                // Update display
+                document.getElementById('current-pattern').textContent = this.currentPattern + 1;
+                document.getElementById('traced-count').textContent = this.tracedCount;
+
+                const accuracy = this.currentPattern > 0 ? 
+                    Math.round((this.tracedCount / this.currentPattern) * 100) : 0;
+                document.getElementById('accuracy').textContent = accuracy + '%';
+
+                // Clear previous pattern
+                this.clearCanvas();
+
+                // Generate new pattern
+                this.generatePattern();
+                this.patternStartTime = Date.now();
+                this.timeRemaining = this.timeLimit;
+                this.startTimer();
+            }
+
+            generatePattern() {
+                // Determine complexity based on current pattern
+                const complexityIndex = Math.floor(this.currentPattern / 5) % this.complexityLevels.length;
+                const complexity = this.complexityLevels[complexityIndex];
+
+                document.getElementById('complexity-level').textContent = complexity.name;
+
+                // Generate multiple overlapping shapes
+                const shapes = [];
+                const canvasWidth = 800;
+                const canvasHeight = 600;
+                const margin = 100;
+
+                for (let i = 0; i < complexity.shapes; i++) {
+                    const shapeType = this.shapeTypes[Math.floor(Math.random() * this.shapeTypes.length)];
+                    const centerX = margin + Math.random() * (canvasWidth - 2 * margin);
+                    const centerY = margin + Math.random() * (canvasHeight - 2 * margin);
+                    const size = 60 + Math.random() * 80;
+                    const rotation = Math.random() * 360;
+
+                    shapes.push({
+                        type: shapeType,
+                        centerX: centerX,
+                        centerY: centerY,
+                        size: size,
+                        rotation: rotation,
+                        id: i
+                    });
+                }
+
+                // Select target shape to trace
+                const targetShapeIndex = Math.floor(Math.random() * shapes.length);
+
+                this.currentPatternData = {
+                    shapes: shapes,
+                    targetShape: shapes[targetShapeIndex],
+                    complexity: complexity,
+                    traced: false
+                };
+
+                // Draw the pattern
+                this.drawPattern();
+
+                // Reset tracing state
+                this.tracingPath = [];
+                this.isTracing = false;
+            }
+
+            drawPattern() {
+                // Clear canvas
+                this.clearCanvas();
+
+                // Draw all shapes
+                this.currentPatternData.shapes.forEach((shape, index) => {
+                    const isTarget = index === this.currentPatternData.shapes.indexOf(this.currentPatternData.targetShape);
+                    this.drawShape(shape, isTarget);
+                });
+            }
+
+            drawShape(shape, isTarget = false) {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                const pathData = this.getShapePathData(shape);
+
+                path.setAttribute('d', pathData);
+                path.setAttribute('class', isTarget ? 'target-shape' : 'pattern-shape');
+                path.setAttribute('transform', `rotate(${shape.rotation} ${shape.centerX} ${shape.centerY})`);
+
+                this.canvas.appendChild(path);
+            }
+
+            getShapePathData(shape) {
+                const { centerX, centerY, size } = shape;
+
+                switch (shape.type) {
+                    case 'circle':
+                        return `M ${centerX + size} ${centerY} A ${size} ${size} 0 1 1 ${centerX - size} ${centerY} A ${size} ${size} 0 1 1 ${centerX + size} ${centerY}`;
+
+                    case 'rectangle':
+                        const halfWidth = size * 0.8;
+                        const halfHeight = size * 0.6;
+                        return `M ${centerX - halfWidth} ${centerY - halfHeight} L ${centerX + halfWidth} ${centerY - halfHeight} L ${centerX + halfWidth} ${centerY + halfHeight} L ${centerX - halfWidth} ${centerY + halfHeight} Z`;
+
+                    case 'triangle':
+                        return `M ${centerX} ${centerY - size} L ${centerX - size * 0.866} ${centerY + size * 0.5} L ${centerX + size * 0.866} ${centerY + size * 0.5} Z`;
+
+                    case 'diamond':
+                        return `M ${centerX} ${centerY - size} L ${centerX + size} ${centerY} L ${centerX} ${centerY + size} L ${centerX - size} ${centerY} Z`;
+
+                    case 'star':
+                        let starPath = '';
+                        for (let i = 0; i < 10; i++) {
+                            const angle = (i * Math.PI) / 5;
+                            const radius = i % 2 === 0 ? size : size * 0.5;
+                            const x = centerX + radius * Math.cos(angle - Math.PI / 2);
+                            const y = centerY + radius * Math.sin(angle - Math.PI / 2);
+                            starPath += (i === 0 ? 'M' : 'L') + ` ${x} ${y}`;
+                        }
+                        return starPath + ' Z';
+
+                    case 'hexagon':
+                        let hexPath = '';
+                        for (let i = 0; i < 6; i++) {
+                            const angle = (i * Math.PI) / 3;
+                            const x = centerX + size * Math.cos(angle);
+                            const y = centerY + size * Math.sin(angle);
+                            hexPath += (i === 0 ? 'M' : 'L') + ` ${x} ${y}`;
+                        }
+                        return hexPath + ' Z';
+
+                    default:
+                        return `M ${centerX} ${centerY} m -${size} 0 a ${size} ${size} 0 1 1 ${size * 2} 0 a ${size} ${size} 0 1 1 -${size * 2} 0`;
+                }
+            }
+
+            startTracing(e) {
+                this.isTracing = true;
+                this.tracingPath = [];
+                const point = this.getMousePos(e);
+                this.tracingPath.push(point);
+                this.updateTracingDisplay();
+            }
+
+            continueTracing(e) {
+                if (!this.isTracing) return;
+
+                const point = this.getMousePos(e);
+                this.tracingPath.push(point);
+                this.updateTracingDisplay();
+            }
+
+            endTracing(e) {
+                this.isTracing = false;
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+
+            updateTracingDisplay() {
+                // Remove existing tracing path
+                const existingPath = this.canvas.querySelector('.tracing-path');
+                if (existingPath) {
+                    existingPath.remove();
+                }
+
+                if (this.tracingPath.length < 2) return;
+
+                // Create new tracing path
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                let pathData = `M ${this.tracingPath[0].x} ${this.tracingPath[0].y}`;
+
+                for (let i = 1; i < this.tracingPath.length; i++) {
+                    pathData += ` L ${this.tracingPath[i].x} ${this.tracingPath[i].y}`;
+                }
+
+                path.setAttribute('d', pathData);
+                path.setAttribute('class', 'tracing-path');
+                this.canvas.appendChild(path);
+            }
+
+            completeTracing() {
+                if (this.tracingPath.length < 5) {
+                    this.showFeedback('Incomplete Tracing', 'Please trace more of the shape outline', 'warning');
+                    return;
+                }
+
+                this.evaluateTracing();
+            }
+
+            evaluateTracing() {
+                const responseTime = Date.now() - this.patternStartTime;
+                const accuracy = this.calculateTracingAccuracy();
+                const isSuccessful = accuracy > 0.4; // 40% threshold
+
+                if (isSuccessful) {
+                    this.tracedCount++;
+                    this.currentPatternData.traced = true;
+                    this.showFeedback('Pattern Traced!', `Accuracy: ${Math.round(accuracy * 100)}%`, 'success');
+                } else {
+                    this.showFeedback('Tracing Incomplete', 'Try to follow the cyan outline more closely', 'warning');
+                }
+
+                // Record response
+                this.responses.push({
+                    patternIndex: this.currentPattern,
+                    targetShape: this.currentPatternData.targetShape.type,
+                    complexity: this.currentPatternData.complexity.name,
+                    traced: isSuccessful,
+                    accuracy: accuracy,
+                    responseTime: responseTime,
+                    tracingPoints: this.tracingPath.length,
+                    timeRemaining: this.timeRemaining,
+                    timestamp: new Date()
+                });
+
+                this.stopTimer();
+
+                // Move to next pattern after delay
+                setTimeout(() => {
+                    this.currentPattern++;
+                    this.nextPattern();
+                }, 2000);
+            }
+
+            calculateTracingAccuracy() {
+                if (this.tracingPath.length === 0) return 0;
+
+                const targetShape = this.currentPatternData.targetShape;
+                let totalDistance = 0;
+                let validPoints = 0;
+
+                for (let point of this.tracingPath) {
+                    const distance = this.distanceToShapeOutline(point, targetShape);
+                    if (distance < 30) { // Within 30 pixels of outline
+                        validPoints++;
+                        totalDistance += Math.max(0, 30 - distance) / 30;
+                    }
+                }
+
+                return validPoints > 0 ? totalDistance / this.tracingPath.length : 0;
+            }
+
+            distanceToShapeOutline(point, shape) {
+                const dx = point.x - shape.centerX;
+                const dy = point.y - shape.centerY;
+
+                // Simplified distance calculation for basic shapes
+                switch (shape.type) {
+                    case 'circle':
+                        const distanceFromCenter = Math.sqrt(dx * dx + dy * dy);
+                        return Math.abs(distanceFromCenter - shape.size);
+
+                    case 'rectangle':
+                        const halfWidth = shape.size * 0.8;
+                        const halfHeight = shape.size * 0.6;
+                        const edgeDistX = Math.abs(Math.abs(dx) - halfWidth);
+                        const edgeDistY = Math.abs(Math.abs(dy) - halfHeight);
+                        return Math.min(edgeDistX, edgeDistY);
+
+                    default:
+                        // Approximate for complex shapes
+                        const approxDistance = Math.sqrt(dx * dx + dy * dy);
+                        return Math.abs(approxDistance - shape.size);
+                }
+            }
+
+            clearTracing() {
+                this.tracingPath = [];
+                const existingPath = this.canvas.querySelector('.tracing-path');
+                if (existingPath) {
+                    existingPath.remove();
+                }
+            }
+
+            clearCanvas() {
+                while (this.canvas.firstChild) {
+                    this.canvas.removeChild(this.canvas.firstChild);
+                }
+            }
+
+            skipPattern() {
+                // Record as skipped
+                this.responses.push({
+                    patternIndex: this.currentPattern,
+                    targetShape: this.currentPatternData.targetShape.type,
+                    complexity: this.currentPatternData.complexity.name,
+                    traced: false,
+                    accuracy: 0,
+                    responseTime: Date.now() - this.patternStartTime,
+                    tracingPoints: 0,
+                    skipped: true,
+                    timeRemaining: this.timeRemaining,
+                    timestamp: new Date()
+                });
+
+                this.stopTimer();
+                this.currentPattern++;
+                this.nextPattern();
+            }
+
+            startTimer() {
+                this.stopTimer();
+                this.timer = setInterval(() => {
+                    this.timeRemaining -= 100;
+
+                    const secondsRemaining = Math.max(0, Math.ceil(this.timeRemaining / 1000));
+                    document.getElementById('time-remaining').textContent = secondsRemaining + 's';
+
+                    const progress = (this.timeRemaining / this.timeLimit) * 100;
+                    document.getElementById('time-progress').style.width = Math.max(0, progress) + '%';
+
+                    if (this.timeRemaining <= 0) {
+                        this.skipPattern();
+                    }
+                }, 100);
+            }
+
+            stopTimer() {
+                if (this.timer) {
+                    clearInterval(this.timer);
+                    this.timer = null;
+                }
+            }
+
+            showFeedback(title, text, type) {
+                const feedback = document.getElementById('completion-feedback');
+                const titleEl = document.getElementById('feedback-title');
+                const textEl = document.getElementById('feedback-text');
+
+                titleEl.textContent = title;
+                textEl.textContent = text;
+                feedback.style.display = 'block';
+
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 2000);
+            }
+
+            completeTest() {
+                this.stopTimer();
+                const endTime = new Date();
+                const duration = Math.round((endTime - this.startTime) / 1000);
+                const accuracy = Math.round((this.tracedCount / this.totalPatterns) * 100);
+
+                const testData = {
+                    patient_name: this.patientName,
+                    duration: duration,
+                    total_points: this.totalPatterns,
+                    correct_points: this.tracedCount,
+                    start_time: this.startTime.toLocaleTimeString(),
+                    end_time: endTime.toLocaleTimeString(),
+                    responses: this.responses,
+                    pattern_recognition_data: {
+                        completion_rate: accuracy,
+                        average_accuracy: this.responses.reduce((sum, r) => sum + r.accuracy, 0) / this.responses.length,
+                        complexity_performance: this.calculateComplexityPerformance(),
+                        average_response_time: this.responses.reduce((sum, r) => sum + r.responseTime, 0) / this.responses.length
+                    }
+                };
+
+                // Save results
+                this.saveResults(testData);
+
+                // Show results
+                this.showResults(testData);
+            }
+
+            calculateComplexityPerformance() {
+                const performance = {};
+                this.complexityLevels.forEach(level => {
+                    const levelResponses = this.responses.filter(r => r.complexity === level.name);
+                    const successCount = levelResponses.filter(r => r.traced).length;
+                    performance[level.name] = levelResponses.length > 0 ? 
+                        Math.round((successCount / levelResponses.length) * 100) : 0;
+                });
+                return performance;
+            }
+
+            saveResults(data) {
+                fetch('/api/save_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Results saved:', result);
+                })
+                .catch(error => {
+                    console.error('Error saving results:', error);
+                });
+            }
+
+            showResults(data) {
+                document.body.innerHTML = `
+                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                <h2>Pattern Recognition Test Completed</h2>
+                            </div>
+
+                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
+                                <div class="card-body">
+                                    <h5 class="card-title">Test Results</h5>
+                                    <hr>
+                                    <div class="row text-center mb-3">
+                                        <div class="col-3">
+                                            <h3 class="text-primary">${data.pattern_recognition_data.completion_rate}%</h3>
+                                            <small>Completion Rate</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-info">${data.duration}s</h3>
+                                            <small>Duration</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-success">${Math.round(data.pattern_recognition_data.average_accuracy * 100)}%</h3>
+                                            <small>Avg Accuracy</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-warning">${Math.round(data.pattern_recognition_data.average_response_time / 1000)}s</h3>
+                                            <small>Avg Time</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-start">
+                                        <h6>Pattern Recognition Analysis:</h6>
+                                        <p class="text-muted">
+                                            Completion rate: ${data.pattern_recognition_data.completion_rate}%<br>
+                                            Average tracing accuracy: ${Math.round(data.pattern_recognition_data.average_accuracy * 100)}%<br>
+                                            ${data.pattern_recognition_data.completion_rate >= 80 ? 
+                                                'Excellent pattern recognition capability.' :
+                                                data.pattern_recognition_data.completion_rate >= 60 ?
+                                                'Good pattern recognition performance.' :
+                                                'Difficulty with complex pattern recognition. Consider follow-up evaluation.'
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:8000/patient'">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to Tests
+                                </button>
+                                <button class="btn btn-success btn-lg" onclick="location.reload()">
+                                    <i class="fas fa-redo me-2"></i>
+                                    Retake Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        let test = null;
+
+        function startTest() {
+            test = new PatternRecognitionTest();
+            test.start();
+        }
+
+        function completeTracing() {
+            if (test) {
+                test.completeTracing();
+            }
+        }
+
+        function clearTracing() {
+            if (test) {
+                test.clearTracing();
+            }
+        }
+
+        function skipPattern() {
+            if (test) {
+                test.skipPattern();
+            }
+        }
+
+        function exitTest() {
+            if (confirm('Are you sure you want to exit this test?')) {
+                window.location.href = 'http://' + window.location.hostname + ':8000/patient';
+            }
+        }
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                exitTest();
+            } else if (e.key === 'Enter' && test) {
+                completeTracing();
+            } else if (e.key === ' ' && test) {
+                e.preventDefault();
+                skipPattern();
+            } else if (e.key === 'c' && test) {
+                clearTracing();
+            }
+        });
+    </script>
+</body>
+</html>

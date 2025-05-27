@@ -1,0 +1,84 @@
+[2025-05-26 18:08:16 +0000] [659] [INFO] Worker reloading: /home/runner/workspace/main.py modified
+[2025-05-26 18:08:21 +0000] [659] [INFO] Worker exiting (pid: 659)
+[2025-05-26 18:08:21 +0000] [976] [INFO] Booting worker with pid: 976
+INFO:root:Excel workbook initialized: glaucoma_test_results.xlsx
+Invalid session 5FGJjNeI14LFApFCAAAC (further occurrences of this error will be logged with level INFO)
+ERROR:engineio.server:Invalid session 5FGJjNeI14LFApFCAAAC (further occurrences of this error will be logged with level INFO)
+[2025-05-26 18:08:24 +0000] [976] [INFO] Worker reloading: /home/runner/workspace/main.py modified
+[2025-05-26 18:08:48 +0000] [976] [INFO] Worker exiting (pid: 976)
+[2025-05-26 18:08:48 +0000] [1080] [INFO] Booting worker with pid: 1080
+INFO:root:Excel workbook initialized: glaucoma_test_results.xlsx
+Invalid session l0KK9-jA9k99P24dAAAA (further occurrences of this error will be logged with level INFO)
+ERROR:engineio.server:Invalid session l0KK9-jA9k99P24dAAAA (further occurrences of this error will be logged with level INFO)
+[2025-05-26 18:08:50 +0000] [1080] [INFO] Worker reloading: /home/runner/workspace/main.py modified
+[2025-05-26 18:08:50 +0000] [1080] [INFO] Worker exiting (pid: 1080)
+[2025-05-26 18:08:50 +0000] [1097] [INFO] Booting worker with pid: 1097
+INFO:root:Excel workbook initialized: glaucoma_test_results.xlsx
+[2025-05-26 18:08:55 +0000] [1097] [INFO] Worker reloading: /home/runner/workspace/main.py modified
+[2025-05-26 18:09:16 +0000] [1097] [INFO] Worker exiting (pid: 1097)
+[2025-05-26 18:09:16 +0000] [1243] [INFO] Booting worker with pid: 1243
+INFO:root:Excel workbook initialized: glaucoma_test_results.xlsx
+Invalid session K4H2e6R0NMT_XaoUAAAA (further occurrences of this error will be logged with level INFO)
+ERROR:engineio.server:Invalid session K4H2e6R0NMT_XaoUAAAA (further occurrences of this error will be logged with level INFO)
+[2025-05-26 18:10:14 +0000] [647] [CRITICAL] WORKER TIMEOUT (pid:1243)
+[2025-05-26 18:10:14 +0000] [1243] [ERROR] Error handling request /socket.io/?EIO=4&transport=websocket&sid=-fZOHcb8k1DMya4IAAAA
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 134, in handle
+    self.handle_request(listener, req, client, addr)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/sync.py", line 177, in handle_request
+    respiter = self.wsgi(environ, resp.start_response)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_socketio/__init__.py", line 42, in __call__
+    return super().__call__(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/middleware.py", line 63, in __call__
+    return self.engineio_app.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/socketio/server.py", line 434, in handle_request
+    return self.eio.handle_request(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/server.py", line 286, in handle_request
+    packets = socket.handle_get_request(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 92, in handle_get_request
+    return getattr(self, '_upgrade_' + transport)(environ,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 151, in _upgrade_websocket
+    return ws(environ, start_response)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/_websocket_wsgi.py", line 15, in __call__
+    ret = self.app(self)
+          ^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 183, in _websocket_handler
+    pkt = websocket_wait()
+          ^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/socket.py", line 156, in websocket_wait
+    data = ws.wait()
+           ^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/engineio/async_drivers/_websocket_wsgi.py", line 32, in wait
+    return self.ws.receive()
+           ^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/simple_websocket/ws.py", line 96, in receive
+    if not self.event.wait(timeout=timeout):
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 629, in wait
+    signaled = self._cond.wait(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/clx0mcir7qw8zk36zbr4jra789g3knf6-python3-3.11.10/lib/python3.11/threading.py", line 327, in wait
+    waiter.acquire()
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/gunicorn/workers/base.py", line 204, in handle_abort
+    sys.exit(1)
+SystemExit: 1
+[2025-05-26 18:10:14 +0000] [1243] [INFO] Worker exiting (pid: 1243)
+[2025-05-26 18:10:14 +0000] [1438] [INFO] Booting worker with pid: 1438
+INFO:root:Excel workbook initialized: glaucoma_test_results.xlsx
+Invalid session -fZOHcb8k1DMya4IAAAA (further occurrences of this error will be logged with level INFO)
+ERROR:engineio.server:Invalid session -fZOHcb8k1DMya4IAAAA (further occurrences of this error will be logged with level INFO)
+INFO:root:Client disconnected
+[2025-05-26 18:11:19 +0000] [647] [INFO] Handling signal: winch
+INFO:root:Client disconnected
+INFO:root:Client disconnected
+INFO:root:Patient joined the room

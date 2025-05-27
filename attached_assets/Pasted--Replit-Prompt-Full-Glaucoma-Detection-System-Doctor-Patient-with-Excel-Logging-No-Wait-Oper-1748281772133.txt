@@ -1,0 +1,164 @@
+🔧 Replit Prompt — Full Glaucoma Detection System (Doctor ↔ Patient with Excel Logging, No-Wait Operation)
+Build a Flask-based Glaucoma Detection System for ophthalmic evaluation featuring:
+
+Two views: 👨‍⚕️ Doctor View and 👤 Patient View
+
+Seven modular vision tests
+
+Real-time test control and supervision
+
+Fully offline Excel-based result storage
+
+Multilingual support (English / Kannada)
+
+Run locally on Replit or PC
+
+✅ PROJECT STRUCTURE
+bash
+Copy
+Edit
+GLAUCOMA/
+│
+├── main.py                          # Main controller (port 8000)
+├── excel_writer.py                 # Saves all results + doctor notes
+├── glaucoma_test_results.xlsx      # Shared workbook, one sheet per test
+│
+├── templates/
+│   ├── doctor.html                 # Doctor dashboard with iframe + controls
+│   ├── patient.html                # Patient entry view
+│   └── index.html                 # Initial view selector (Doctor / Patient)
+│
+├── static/
+│   └── shared.css/js               # Styling & socket control
+│
+├── visual_field_test/             # Port 8001
+│   └── app.py
+├── csv1000_test/                  # Port 8002
+│   └── app.py
+├── edge_test/                     # Port 8003
+│   └── app.py
+├── motion_test/                   # Port 8004
+│   └── app.py
+├── pattern_test/                  # Port 8005
+│   └── app.py
+├── pellii_robinson_test/          # Port 8006
+│   └── app.py
+├── sparcs_test_dot/               # Port 8007
+│   └── app.py
+🏁 ENTRY POINT (/ on port 8000)
+On visiting http://localhost:8000, the user sees two large selection cards:
+
+👨‍⚕️ Doctor View → /doctor
+
+👤 Patient View → /patient
+
+This index.html is styled for clarity and touch use.
+
+👨‍⚕️ DOCTOR VIEW (/doctor)
+Displays patient screen in an iframe (or real-time preview)
+
+Can start or skip tests via buttons (emitted over WebSocket)
+
+Textarea field allows entering:
+
+Symptoms
+
+Medical concerns
+
+Additional notes
+
+✅ Data persists even if patient is not connected
+
+✅ Doctor can open/see updated Excel workbook
+
+✅ Can supervise patient even mid-test
+
+👤 PATIENT VIEW (/patient)
+Patient sees test list and can choose any test (no need to wait for doctor)
+
+If doctor sends a command, patient view will immediately redirect to the specified test
+
+All tests are fullscreen, mobile-optimized, and respond to skip/start
+
+📊 RESULT STORAGE (excel_writer.py)
+Single Excel workbook: glaucoma_test_results.xlsx
+
+Each test writes to its own sheet (e.g., "CSV-1000", "VisualField")
+
+Each row contains:
+
+Patient name
+
+Test name
+
+Timestamp
+
+Time taken
+
+Accuracy (right/wrong counts)
+
+Any test-specific metrics
+
+Doctor’s notes (once entered)
+
+✅ Writing is centralized, done locally without external DB
+
+🔄 DOCTOR–PATIENT INTERACTION (No-Wait WebSocket)
+Built using Flask-SocketIO
+
+All actions (start, skip, redirect) are live
+
+But patient can independently operate even if doctor is offline
+
+Results log to Excel regardless of doctor’s presence
+
+🧪 TEST MODULE REQUIREMENTS
+Each test is a standalone Flask app on port 800X.
+
+🔹 Visual Field Test (8001)
+54-point 24-2 grid
+
+4–2 staircase
+
+Stimulus resume after breaks
+
+Green/Yellow/Red per point
+
+Click within 1500ms = "seen"
+
+🔹 CSV-1000 Test (8002)
+Letter contrast
+
+4-option radio buttons per letter
+
+✅ Multilingual: English/Kannada toggle
+
+🔹 Pelli-Robson Test (8006)
+No dropdowns
+
+Contrast-based letter rows
+
+✅ Multilingual toggle
+
+🔹 Tracing, Motion, Edge, SPARCS (8003–8007)
+Fully functional
+
+SPARCS has quadrant labels (1–4)
+
+Tracing includes overlapping shapes
+
+Flexible accuracy threshold
+
+🌐 MULTILINGUAL SUPPORT
+For CSV-1000 and Pelli-Robson only
+
+User selects English or Kannada
+
+Stimulus content only changes — interface remains in English
+
+🔒 LOCAL DEPLOYMENT
+✅ Works completely offline
+
+✅ Runs via python main.py + starting test apps
+
+✅ Doctor and patient can be on different devices (same Wi-Fi or tunnel)

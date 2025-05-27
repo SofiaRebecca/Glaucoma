@@ -1,0 +1,495 @@
+
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctor Dashboard - Glaucoma Detection</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-user-md me-2"></i>
+                Doctor Dashboard
+            </a>
+            <div class="navbar-nav">
+                <span class="nav-link">
+                    <span id="patient-status" class="badge bg-secondary">
+                        <i class="fas fa-circle me-1"></i>
+                        Patient Offline
+                    </span>
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-3">
+        <div class="row">
+            <!-- Control Panel -->
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            Test Control Panel
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="test-select" class="form-label">Select Test</label>
+                            <select class="form-select" id="test-select">
+                                <option value="">Choose a test...</option>
+                                <option value="visual_field">Visual Field Test</option>
+                                <option value="csv1000">CSV-1000 Test</option>
+                                <option value="edge">Edge Detection Test</option>
+                                <option value="motion">Motion Detection Test</option>
+                                <option value="pattern">Pattern Recognition Test</option>
+                                <option value="pelli_robinson">Pelli-Robinson Test</option>
+                                <option value="sparcs">SPARCS Test</option>
+                            </select>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mb-3">
+                            <button class="btn btn-success" id="start-test-btn">
+                                <i class="fas fa-play me-2"></i>
+                                Start Test
+                            </button>
+                            <button class="btn btn-warning" id="skip-test-btn">
+                                <i class="fas fa-forward me-2"></i>
+                                Skip Test
+                            </button>
+                            <button class="btn btn-danger" id="stop-test-btn">
+                                <i class="fas fa-stop me-2"></i>
+                                Stop Test
+                            </button>
+                            <button class="btn btn-info" id="next-patient-btn">
+                                <i class="fas fa-user-plus me-2"></i>
+                                Next Patient
+                            </button>
+                        </div>
+
+                        <div class="alert alert-info" id="command-status" style="display: none;">
+                            <small id="status-text">Ready to send commands</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Patient Information -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            Patient Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="patient-name" class="form-label">Current Patient</label>
+                            <input type="text" class="form-control" id="patient-name" placeholder="No patient connected" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="patient-activity" class="form-label">Current Activity</label>
+                            <input type="text" class="form-control" id="patient-activity" placeholder="Waiting..." readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinical Notes -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-notes-medical me-2"></i>
+                            Clinical Notes
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="symptoms" class="form-label">Symptoms</label>
+                            <textarea class="form-control" id="symptoms" rows="3" placeholder="Patient reported symptoms..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="medical-concerns" class="form-label">Medical Concerns</label>
+                            <textarea class="form-control" id="medical-concerns" rows="3" placeholder="Clinical observations and concerns..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="additional-notes" class="form-label">Additional Notes</label>
+                            <textarea class="form-control" id="additional-notes" rows="3" placeholder="Additional clinical notes..."></textarea>
+                        </div>
+                        
+                        <button class="btn btn-primary w-100" id="save-notes-btn">
+                            <i class="fas fa-save me-2"></i>
+                            Save Notes
+                        </button>
+                        
+                        <div class="alert alert-success mt-3" id="notes-status" style="display: none;">
+                            <small>Notes saved successfully</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Activity Monitor -->
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-monitor-heart-rate me-2"></i>
+                            Patient Activity Monitor
+                        </h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" id="toggle-sync">
+                                <i class="fas fa-sync me-1"></i>
+                                <span id="sync-text">Enable Sync</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="patient-activity-display" class="text-center p-5">
+                            <i class="fas fa-user-clock fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">Waiting for patient to connect...</h6>
+                            <p class="text-muted small">Patient activity will be shown here when they join</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Test Results Display -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>
+                            Test Results
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="test-results">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-clipboard-list fa-3x mb-3"></i>
+                                <p>Test results will appear here when patients complete tests</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Doctor-specific JavaScript
+        const socket = io();
+        let currentPatient = '';
+        let syncEnabled = false;
+        
+        // Join doctor room
+        socket.emit('join_doctor');
+        
+        // Patient status updates
+        socket.on('patient_status', function(data) {
+            const statusElement = document.getElementById('patient-status');
+            if (data.online) {
+                statusElement.innerHTML = '<i class="fas fa-circle me-1"></i>Patient Online';
+                statusElement.className = 'badge bg-success';
+            } else {
+                statusElement.innerHTML = '<i class="fas fa-circle me-1"></i>Patient Offline';
+                statusElement.className = 'badge bg-secondary';
+                // Clear patient info when offline
+                document.getElementById('patient-name').value = 'No patient connected';
+                document.getElementById('patient-activity').value = 'Waiting...';
+            }
+        });
+        
+        // Listen for patient view updates
+        socket.on('patient_view_update', function(data) {
+            updatePatientActivity(data);
+        });
+        
+        // Listen for patient identification
+        socket.on('patient_identified', function(data) {
+            currentPatient = data.patient;
+            document.getElementById('patient-name').value = currentPatient;
+            updatePatientActivity({action: 'Patient identified', patient: currentPatient});
+        });
+        
+        // Listen for test navigation
+        socket.on('patient_navigation', function(data) {
+            updatePatientActivity(data);
+        });
+        
+        function updatePatientActivity(data) {
+            const activityDisplay = document.getElementById('patient-activity-display');
+            const activityInput = document.getElementById('patient-activity');
+            
+            let activityText = '';
+            let displayHtml = '';
+            
+            console.log('Patient activity update:', data); // Debug log
+            
+            switch(data.action) {
+                case 'patient_identified':
+                    activityText = `Patient ${data.patient} has joined`;
+                    displayHtml = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-user-check fa-2x mb-2"></i>
+                            <h6>Patient Connected</h6>
+                            <p class="mb-0">${data.patient} is now online</p>
+                            <small class="text-muted">Time: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                        </div>
+                    `;
+                    break;
+                case 'test_start':
+                case 'test_started':
+                    activityText = `Starting ${getTestDisplayName(data.test)} test`;
+                    displayHtml = `
+                        <div class="alert alert-info">
+                            <i class="fas fa-play-circle fa-2x mb-2"></i>
+                            <h6>Test Started</h6>
+                            <p class="mb-0">${data.patient} started ${getTestDisplayName(data.test)}</p>
+                            <small class="text-muted">Time: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                        </div>
+                    `;
+                    break;
+                case 'test_completed':
+                    activityText = `Completed ${data.test} test`;
+                    displayHtml = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <h6>Test Completed</h6>
+                            <p class="mb-0">${data.test} - Score: ${data.accuracy || 'N/A'}%</p>
+                            <small class="text-muted">Time: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                        </div>
+                    `;
+                    break;
+                case 'test_skipped':
+                    activityText = `Skipped ${getTestDisplayName(data.test)} test`;
+                    displayHtml = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-forward fa-2x mb-2"></i>
+                            <h6>Test Skipped</h6>
+                            <p class="mb-0">${data.patient} skipped ${getTestDisplayName(data.test)}</p>
+                            <small class="text-muted">Time: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                        </div>
+                    `;
+                    break;
+                case 'session_complete':
+                    activityText = 'Session completed - Ready for next patient';
+                    displayHtml = `
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-double fa-2x mb-2"></i>
+                            <h6>Session Complete</h6>
+                            <p class="mb-0">${data.patient} completed session</p>
+                            <small class="text-muted">Time: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                        </div>
+                    `;
+                    break;
+                case 'page_load':
+                    activityText = 'On test selection page';
+                    displayHtml = `
+                        <div class="alert alert-primary">
+                            <i class="fas fa-list fa-2x mb-2"></i>
+                            <h6>Test Selection</h6>
+                            <p class="mb-0">Patient is choosing a test</p>
+                            <small class="text-muted">Time: ${new Date(data.timestamp).toLocaleTimeString()}</small>
+                        </div>
+                    `;
+                    break;
+                default:
+                    activityText = 'Active';
+                    displayHtml = `
+                        <div class="text-center text-muted">
+                            <i class="fas fa-user fa-2x mb-2"></i>
+                            <h6>Patient Active</h6>
+                            <p class="mb-0">Monitoring patient activity...</p>
+                            <small class="text-muted">Last update: ${new Date().toLocaleTimeString()}</small>
+                        </div>
+                    `;
+            }
+            
+            activityInput.value = activityText;
+            activityDisplay.innerHTML = displayHtml;
+        }
+        
+        // Test control buttons
+        document.getElementById('start-test-btn').addEventListener('click', function() {
+            const testSelect = document.getElementById('test-select');
+            const selectedTest = testSelect.value;
+            
+            if (!selectedTest) {
+                showCommandStatus('Please select a test first', 'warning');
+                return;
+            }
+            
+            socket.emit('doctor_command', {
+                command: 'start',
+                test: selectedTest
+            });
+        });
+        
+        document.getElementById('skip-test-btn').addEventListener('click', function() {
+            socket.emit('doctor_command', {
+                command: 'skip',
+                test: 'current'
+            });
+        });
+        
+        document.getElementById('stop-test-btn').addEventListener('click', function() {
+            socket.emit('doctor_command', {
+                command: 'stop',
+                test: 'all'
+            });
+        });
+        
+        document.getElementById('next-patient-btn').addEventListener('click', function() {
+            if (confirm('Move to next patient? This will clear current patient data.')) {
+                socket.emit('doctor_command', {
+                    command: 'next_patient'
+                });
+                
+                // Clear form data
+                document.getElementById('patient-name').value = 'No patient connected';
+                document.getElementById('patient-activity').value = 'Waiting...';
+                document.getElementById('symptoms').value = '';
+                document.getElementById('medical-concerns').value = '';
+                document.getElementById('additional-notes').value = '';
+                
+                currentPatient = '';
+                showCommandStatus('Ready for next patient', 'info');
+            }
+        });
+        
+        // Sync toggle
+        document.getElementById('toggle-sync').addEventListener('click', function() {
+            syncEnabled = !syncEnabled;
+            const syncText = document.getElementById('sync-text');
+            const btn = this;
+            
+            if (syncEnabled) {
+                syncText.textContent = 'Disable Sync';
+                btn.className = 'btn btn-sm btn-success';
+                showCommandStatus('Real-time sync enabled', 'success');
+            } else {
+                syncText.textContent = 'Enable Sync';
+                btn.className = 'btn btn-sm btn-outline-primary';
+                showCommandStatus('Real-time sync disabled', 'info');
+            }
+        });
+        
+        // Command status feedback
+        socket.on('command_sent', function(data) {
+            showCommandStatus(`Command "${data.command}" sent`, 'success');
+        });
+        
+        // Test results
+        socket.on('test_result', function(data) {
+            displayTestResult(data);
+        });
+        
+        // Save notes functionality
+        document.getElementById('save-notes-btn').addEventListener('click', function() {
+            const patientName = document.getElementById('patient-name').value;
+            const symptoms = document.getElementById('symptoms').value;
+            const medicalConcerns = document.getElementById('medical-concerns').value;
+            const additionalNotes = document.getElementById('additional-notes').value;
+            
+            if (!patientName.trim() || patientName === 'No patient connected') {
+                alert('No patient connected to save notes for');
+                return;
+            }
+            
+            const notesData = {
+                patient_name: patientName,
+                notes: {
+                    symptoms: symptoms,
+                    medical_concerns: medicalConcerns,
+                    additional_notes: additionalNotes
+                }
+            };
+            
+            fetch('/api/save_notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(notesData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotesStatus('Notes saved successfully', 'success');
+                } else {
+                    showNotesStatus('Error saving notes: ' + data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showNotesStatus('Error saving notes: ' + error.message, 'error');
+            });
+        });
+        
+        function showCommandStatus(message, type) {
+            const statusElement = document.getElementById('command-status');
+            const textElement = document.getElementById('status-text');
+            
+            statusElement.className = `alert alert-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'}`;
+            textElement.textContent = message;
+            statusElement.style.display = 'block';
+            
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        function showNotesStatus(message, type) {
+            const statusElement = document.getElementById('notes-status');
+            statusElement.className = `alert alert-${type === 'success' ? 'success' : 'danger'} mt-3`;
+            statusElement.textContent = message;
+            statusElement.style.display = 'block';
+            
+            setTimeout(() => {
+                statusElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        function displayTestResult(data) {
+            const resultsContainer = document.getElementById('test-results');
+            const resultElement = document.createElement('div');
+            resultElement.className = 'alert alert-info mb-2';
+            resultElement.innerHTML = `
+                <strong>${data.test_name}</strong> - Patient: ${data.patient_name}<br>
+                <small>Accuracy: ${data.accuracy}% | Duration: ${data.duration}s | Completed: ${new Date().toLocaleTimeString()}</small>
+            `;
+            
+            // Clear placeholder text if present
+            if (resultsContainer.querySelector('.text-muted')) {
+                resultsContainer.innerHTML = '';
+            }
+            
+            resultsContainer.insertBefore(resultElement, resultsContainer.firstChild);
+            
+            // Keep only last 5 results
+            const results = resultsContainer.querySelectorAll('.alert');
+            if (results.length > 5) {
+                results[results.length - 1].remove();
+            }
+        }
+        
+        function getTestDisplayName(testName) {
+            const displayNames = {
+                'visual_field': 'Visual Field',
+                'csv1000': 'CSV-1000',
+                'edge': 'Edge Detection',
+                'motion': 'Motion Detection',
+                'pattern': 'Pattern Recognition',
+                'pelli_robinson': 'Pelli-Robinson',
+                'sparcs': 'SPARCS'
+            };
+            
+            return displayNames[testName] || testName;
+        }
+    </script>
+</body>
+</html>

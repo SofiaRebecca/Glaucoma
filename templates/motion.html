@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motion Detection Test</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #000;
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .test-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .motion-area {
+            position: relative;
+            width: 80vw;
+            height: 70vh;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: #111;
+            overflow: hidden;
+        }
+
+        .motion-dot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: none;
+            opacity: 1;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .fixation-point {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 24px;
+            z-index: 10;
+            font-weight: bold;
+        }
+
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+
+        .test-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .exit-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(220, 53, 69, 0.9);
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .motion-controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            gap: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .motion-controls.show {
+            display: flex;
+        }
+
+        .direction-btn {
+            background: rgba(0, 123, 255, 0.8);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            min-width: 100px;
+            transition: all 0.3s ease;
+        }
+
+        .direction-btn:hover {
+            background: rgba(0, 123, 255, 1);
+            transform: scale(1.05);
+        }
+
+        .status-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            text-align: center;
+            display: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .next-trial-btn {
+            background: rgba(40, 167, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        /* Mobile fullscreen button */
+        #test-fullscreen-fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 123, 255, 0.8);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1001;
+            display: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        #test-fullscreen-fab:hover {
+            background: rgba(0, 123, 255, 1);
+            transform: scale(1.1);
+        }
+
+    </style>
+</head>
+<body>
+    <div id="instructions" class="instructions">
+        <h2 class="mb-4">
+            <i class="fas fa-running me-2"></i>
+            Motion Detection Test
+        </h2>
+        <p class="mb-4">
+            This test evaluates your ability to detect and track moving objects in your visual field.
+        </p>
+        <div class="mb-4">
+            <h5>Instructions:</h5>
+            <ul class="text-start">
+                <li>Keep your eyes focused on the red cross (+) in the center</li>
+                <li>A white circle will appear and move in a direction</li>
+                <li>Watch the circle's movement using your peripheral vision</li>
+                <li>When the circle stops moving, direction buttons will appear</li>
+                <li>Click the button that matches the direction you saw</li>
+                <li>Complete 20 trials to finish the test</li>
+            </ul>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="startTest()">
+            <i class="fas fa-play me-2"></i>
+            Start Test
+        </button>
+
+        <!-- Mobile fullscreen trigger -->
+        <button id="start-test-fullscreen-btn" class="btn btn-info btn-lg" onclick="startTestFullscreen()" style="display:none">
+            <i class="fas fa-expand me-2"></i>
+            Start Test Fullscreen
+        </button>
+    </div>
+
+    <div id="test-container" class="test-container" style="display: none;">
+        <div class="test-info">
+            <div><strong>Trial:</strong> <span id="current-trial">0</span> / 20</div>
+            <div><strong>Correct:</strong> <span id="correct-count">0</span></div>
+            <div><strong>Accuracy:</strong> <span id="accuracy">0%</span></div>
+        </div>
+
+        <div class="motion-area" id="motion-area">
+            <div class="fixation-point">+</div>
+        </div>
+
+        <div class="motion-controls" id="motion-controls">
+            <button class="direction-btn" onclick="selectDirection('up')">
+                <i class="fas fa-arrow-up"></i><br>Up
+            </button>
+            <button class="direction-btn" onclick="selectDirection('down')">
+                <i class="fas fa-arrow-down"></i><br>Down
+            </button>
+            <button class="direction-btn" onclick="selectDirection('left')">
+                <i class="fas fa-arrow-left"></i><br>Left
+            </button>
+            <button class="direction-btn" onclick="selectDirection('right')">
+                <i class="fas fa-arrow-right"></i><br>Right
+            </button>
+        </div>
+
+        <div class="status-message" id="status-message">
+            <div id="status-text">Get ready for the next trial...</div>
+            <button class="next-trial-btn" onclick="continueToNextTrial()" style="display: none;" id="continue-btn">Continue</button>
+        </div>
+
+        <button class="exit-btn" onclick="exitTest()">
+            <i class="fas fa-times"></i> Exit
+        </button>
+
+        <!-- Mobile fullscreen toggle during test -->
+        <button id="test-fullscreen-fab" onclick="toggleTestFullscreen()">
+            <i class="fas fa-expand"></i>
+        </button>
+    </div>
+
+    <script>
+        class MotionDetectionTest {
+            constructor() {
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
+                this.startTime = null;
+                this.currentTrial = 0;
+                this.totalTrials = 20;
+                this.correctCount = 0;
+                this.responses = [];
+                this.motionArea = null;
+                this.currentDot = null;
+                this.currentDirection = null;
+                this.isMotionActive = false;
+                this.awaitingResponse = false;
+                this.trialStartTime = null;
+
+                // Motion parameters
+                this.directions = ['up', 'down', 'left', 'right'];
+                this.motionSpeed = 3; // pixels per frame
+                this.motionDistance = 200; // total distance to move
+
+                this.initializeTest();
+            }
+
+            initializeTest() {
+                this.motionArea = document.getElementById('motion-area');
+
+                // Show fullscreen button on mobile
+                if (isMobileDevice()) {
+                    document.getElementById('start-test-fullscreen-btn').style.display = 'block';
+                }
+            }
+
+            start() {
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('test-container').style.display = 'flex';
+                this.startTime = new Date();
+                this.nextTrial();
+            }
+
+            nextTrial() {
+                if (this.currentTrial >= this.totalTrials) {
+                    this.completeTest();
+                    return;
+                }
+
+                this.currentTrial++;
+                this.updateDisplay();
+
+                // Clear any existing elements
+                this.clearMotionElements();
+                this.hideControls();
+
+                // Show status message
+                this.showStatus("Keep looking at the red cross (+)", 2000);
+
+                // Start trial after delay
+                setTimeout(() => {
+                    this.startMotionTrial();
+                }, 2500);
+            }
+
+            startMotionTrial() {
+                // Generate random direction
+                this.currentDirection = this.directions[Math.floor(Math.random() * this.directions.length)];
+
+                // Create motion dot at center
+                this.createMotionDot();
+                this.trialStartTime = Date.now();
+
+                // Start motion animation
+                this.animateMotion();
+            }
+
+            createMotionDot() {
+                const dot = document.createElement('div');
+                dot.className = 'motion-dot';
+
+                // Start at center of motion area
+                const centerX = this.motionArea.offsetWidth / 2 - 15; // -15 for half dot width
+                const centerY = this.motionArea.offsetHeight / 2 - 15; // -15 for half dot height
+
+                dot.style.left = centerX + 'px';
+                dot.style.top = centerY + 'px';
+
+                this.motionArea.appendChild(dot);
+                this.currentDot = dot;
+                this.isMotionActive = true;
+            }
+
+            animateMotion() {
+                if (!this.currentDot || !this.isMotionActive) return;
+
+                const currentX = parseInt(this.currentDot.style.left);
+                const currentY = parseInt(this.currentDot.style.top);
+
+                let newX = currentX;
+                let newY = currentY;
+
+                // Calculate new position based on direction
+                switch (this.currentDirection) {
+                    case 'up':
+                        newY -= this.motionSpeed;
+                        break;
+                    case 'down':
+                        newY += this.motionSpeed;
+                        break;
+                    case 'left':
+                        newX -= this.motionSpeed;
+                        break;
+                    case 'right':
+                        newX += this.motionSpeed;
+                        break;
+                }
+
+                // Check if we've moved enough distance
+                const centerX = this.motionArea.offsetWidth / 2 - 15;
+                const centerY = this.motionArea.offsetHeight / 2 - 15;
+                const distance = Math.sqrt(Math.pow(newX - centerX, 2) + Math.pow(newY - centerY, 2));
+
+                if (distance >= this.motionDistance) {
+                    // Motion complete
+                    this.stopMotion();
+                    return;
+                }
+
+                // Check boundaries
+                if (newX < 0 || newX > this.motionArea.offsetWidth - 30 || 
+                    newY < 0 || newY > this.motionArea.offsetHeight - 30) {
+                    // Hit boundary, stop motion
+                    this.stopMotion();
+                    return;
+                }
+
+                // Update position
+                this.currentDot.style.left = newX + 'px';
+                this.currentDot.style.top = newY + 'px';
+
+                // Continue animation
+                requestAnimationFrame(() => this.animateMotion());
+            }
+
+            stopMotion() {
+                this.isMotionActive = false;
+
+                // Hide the dot
+                if (this.currentDot) {
+                    this.currentDot.style.display = 'none';
+                }
+
+                // Show direction selection
+                this.awaitingResponse = true;
+                this.showControls();
+                this.showStatus("Which direction did the circle move?");
+            }
+
+            selectDirection(selectedDirection) {
+                if (!this.awaitingResponse) return;
+
+                this.awaitingResponse = false;
+                const responseTime = Date.now() - this.trialStartTime;
+                const isCorrect = selectedDirection === this.currentDirection;
+
+                if (isCorrect) {
+                    this.correctCount++;
+                }
+
+                // Record response
+                this.responses.push({
+                    trialIndex: this.currentTrial,
+                    correctDirection: this.currentDirection,
+                    selectedDirection: selectedDirection,
+                    isCorrect: isCorrect,
+                    responseTime: responseTime,
+                    timestamp: new Date()
+                });
+
+                this.hideControls();
+
+                // Show feedback
+                const feedbackText = isCorrect ? 
+                    `✓ Correct! The circle moved ${this.currentDirection}.` : 
+                    `✗ Incorrect. The circle moved ${this.currentDirection}, you selected ${selectedDirection}.`;
+
+                this.showStatus(feedbackText, 2000);
+
+                // Continue to next trial
+                setTimeout(() => {
+                    this.nextTrial();
+                }, 2500);
+            }
+
+            updateDisplay() {
+                document.getElementById('current-trial').textContent = this.currentTrial;
+                document.getElementById('correct-count').textContent = this.correctCount;
+
+                const accuracy = this.currentTrial > 0 ? 
+                    Math.round((this.correctCount / this.currentTrial) * 100) : 0;
+                document.getElementById('accuracy').textContent = accuracy + '%';
+            }
+
+            showControls() {
+                document.getElementById('motion-controls').classList.add('show');
+            }
+
+            hideControls() {
+                document.getElementById('motion-controls').classList.remove('show');
+            }
+
+            showStatus(message, duration = null) {
+                const statusDiv = document.getElementById('status-message');
+                const statusText = document.getElementById('status-text');
+                const continueBtn = document.getElementById('continue-btn');
+
+                statusText.textContent = message;
+                statusDiv.style.display = 'block';
+                continueBtn.style.display = 'none';
+
+                if (duration) {
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, duration);
+                }
+            }
+
+            hideStatus() {
+                document.getElementById('status-message').style.display = 'none';
+            }
+
+            clearMotionElements() {
+                if (this.currentDot) {
+                    this.currentDot.remove();
+                    this.currentDot = null;
+                }
+                this.isMotionActive = false;
+            }
+
+            completeTest() {
+                const endTime = new Date();
+                const duration = Math.round((endTime - this.startTime) / 1000);
+                const accuracy = Math.round((this.correctCount / this.totalTrials) * 100);
+
+                const testData = {
+                    patient_name: this.patientName,
+                    test_name: 'Motion Detection',
+                    duration: duration,
+                    total_trials: this.totalTrials,
+                    correct_responses: this.correctCount,
+                    accuracy_percentage: accuracy,
+                    start_time: this.startTime.toLocaleTimeString(),
+                    end_time: endTime.toLocaleTimeString(),
+                    responses: this.responses,
+                    motion_detection_data: {
+                        overall_accuracy: accuracy,
+                        average_response_time: this.responses.reduce((sum, r) => sum + r.responseTime, 0) / this.responses.length,
+                        direction_performance: this.calculateDirectionPerformance()
+                    }
+                };
+
+                // Save results
+                this.saveResults(testData);
+
+                // Show results
+                this.showResults(testData);
+            }
+
+            calculateDirectionPerformance() {
+                const directionResults = {};
+                this.directions.forEach(direction => {
+                    const directionResponses = this.responses.filter(r => r.correctDirection === direction);
+                    const correctCount = directionResponses.filter(r => r.isCorrect).length;
+                    directionResults[direction] = directionResponses.length > 0 ? 
+                        Math.round((correctCount / directionResponses.length) * 100) : 0;
+                });
+                return directionResults;
+            }
+
+            saveResults(data) {
+                fetch('/api/save_test_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        test_name: 'motion',
+                        patient_name: data.patient_name,
+                        duration: data.duration,
+                        total_points: data.total_trials,
+                        correct_points: data.correct_responses,
+                        start_time: data.start_time,
+                        end_time: data.end_time,
+                        responses: data.responses,
+                        specific_data: data.motion_detection_data
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Results saved:', result);
+                })
+                .catch(error => {
+                    console.error('Error saving results:', error);
+                });
+            }
+
+            showResults(data) {
+                document.body.innerHTML = `
+                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                <h2>Motion Detection Test Completed</h2>
+                            </div>
+
+                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
+                                <div class="card-body">
+                                    <h5 class="card-title">Test Results</h5>
+                                    <hr>
+                                    <div class="row text-center mb-3">
+                                        <div class="col-3">
+                                            <h3 class="text-primary">${data.accuracy_percentage}%</h3>
+                                            <small>Accuracy</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-info">${data.duration}s</h3>
+                                            <small>Duration</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-success">${data.correct_responses}/${data.total_trials}</h3>
+                                            <small>Correct</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-warning">${Math.round(data.motion_detection_data.average_response_time)}ms</h3>
+                                            <small>Avg Time</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="text-start">
+                                        <h6>Motion Detection Analysis:</h6>
+                                        <p class="text-muted">
+                                            Overall accuracy: ${data.accuracy_percentage}%<br>
+                                            ${data.accuracy_percentage >= 80 ? 
+                                                'Excellent motion detection and directional awareness.' :
+                                                data.accuracy_percentage >= 60 ?
+                                                'Good motion detection performance with some directional challenges.' :
+                                                'Reduced motion detection accuracy. Consider follow-up evaluation.'
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='/patient'">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to Tests
+                                </button>
+                                <button class="btn btn-success btn-lg" onclick="location.reload()">
+                                    <i class="fas fa-redo me-2"></i>
+                                    Retake Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        let test = null;
+
+        function startTest() {
+            test = new MotionDetectionTest();
+            test.start();
+            // Show mobile fullscreen button during test
+            if (isMobileDevice()) {
+                document.getElementById('test-fullscreen-fab').style.display = 'block';
+            }
+        }
+
+        function startTestFullscreen() {
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().then(() => {
+                    setTimeout(() => startTest(), 500);
+                });
+            } else {
+                startTest();
+            }
+        }
+
+        function toggleTestFullscreen() {
+            if (!document.fullscreenElement) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                    document.getElementById('test-fullscreen-fab').innerHTML = '<i class="fas fa-compress"></i>';
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                    document.getElementById('test-fullscreen-fab').innerHTML = '<i class="fas fa-expand"></i>';
+                }
+            }
+        }
+
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+    </script>
+</body>
+</html>

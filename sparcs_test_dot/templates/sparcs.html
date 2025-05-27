@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPARCS Test</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #000;
+            color: white;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .test-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+        
+        .sparcs-grid {
+            position: relative;
+            width: 80vh;
+            height: 80vh;
+            max-width: 80vw;
+            max-height: 80vw;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: #111;
+        }
+        
+        .quadrant {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        
+        .quadrant:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .quadrant.active {
+            background-color: rgba(0, 255, 255, 0.2);
+            border-color: rgba(0, 255, 255, 0.8);
+        }
+        
+        .quadrant.correct {
+            background-color: rgba(0, 255, 0, 0.2);
+            border-color: rgba(0, 255, 0, 0.8);
+        }
+        
+        .quadrant.incorrect {
+            background-color: rgba(255, 0, 0, 0.2);
+            border-color: rgba(255, 0, 0, 0.8);
+        }
+        
+        .quadrant-1 { 
+            top: 0; 
+            left: 0; 
+        }
+        
+        .quadrant-2 { 
+            top: 0; 
+            right: 0; 
+        }
+        
+        .quadrant-3 { 
+            bottom: 0; 
+            left: 0; 
+        }
+        
+        .quadrant-4 { 
+            bottom: 0; 
+            right: 0; 
+        }
+        
+        .stimulus-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .stimulus-dot.visible {
+            opacity: 1;
+        }
+        
+        .fixation-cross {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: red;
+            font-size: 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .instructions {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 10px;
+            max-width: 600px;
+        }
+        
+        .test-info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .exit-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .quadrant-scores {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        
+        .progress-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 300px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--bs-success);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .trial-feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions" class="instructions">
+        <h2 class="mb-4">
+            <i class="fas fa-th me-2"></i>
+            SPARCS Test
+        </h2>
+        <p class="mb-4">
+            This test evaluates visual function across four quadrants using spatial contrast sensitivity.
+        </p>
+        <div class="mb-4">
+            <h5>Instructions:</h5>
+            <ul class="text-start">
+                <li>Keep your eyes focused on the red cross in the center</li>
+                <li>A white dot will briefly appear in one of the four quadrants</li>
+                <li>Click on the quadrant where you saw the dot</li>
+                <li>Respond as quickly and accurately as possible</li>
+                <li>The test evaluates each quadrant independently</li>
+            </ul>
+        </div>
+        <div class="mb-4">
+            <h6>Quadrant Labels:</h6>
+            <div class="row text-center">
+                <div class="col-6">
+                    <div class="border p-2 mb-2">
+                        <strong>Quadrant 1</strong><br>
+                        <small>Upper Left</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border p-2 mb-2">
+                        <strong>Quadrant 2</strong><br>
+                        <small>Upper Right</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border p-2">
+                        <strong>Quadrant 3</strong><br>
+                        <small>Lower Left</small>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="border p-2">
+                        <strong>Quadrant 4</strong><br>
+                        <small>Lower Right</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button class="btn btn-primary btn-lg" onclick="startTest()">
+            <i class="fas fa-play me-2"></i>
+            Start Test
+        </button>
+    </div>
+    
+    <div id="test-container" class="test-container" style="display: none;">
+        <div class="test-info">
+            <div>Trial: <span id="current-trial">0</span> / 40</div>
+            <div>Correct: <span id="correct-count">0</span></div>
+            <div>Accuracy: <span id="accuracy">0%</span></div>
+        </div>
+        
+        <div class="sparcs-grid" id="sparcs-grid">
+            <div class="fixation-cross">+</div>
+            
+            <div class="quadrant quadrant-1" data-quadrant="1" onclick="selectQuadrant(1)">
+                <span>1</span>
+            </div>
+            <div class="quadrant quadrant-2" data-quadrant="2" onclick="selectQuadrant(2)">
+                <span>2</span>
+            </div>
+            <div class="quadrant quadrant-3" data-quadrant="3" onclick="selectQuadrant(3)">
+                <span>3</span>
+            </div>
+            <div class="quadrant quadrant-4" data-quadrant="4" onclick="selectQuadrant(4)">
+                <span>4</span>
+            </div>
+        </div>
+        
+        <div class="quadrant-scores">
+            <h6 class="mb-2">Quadrant Scores</h6>
+            <div class="mb-1">Q1: <span id="q1-score">0/0</span> (<span id="q1-percent">0%</span>)</div>
+            <div class="mb-1">Q2: <span id="q2-score">0/0</span> (<span id="q2-percent">0%</span>)</div>
+            <div class="mb-1">Q3: <span id="q3-score">0/0</span> (<span id="q3-percent">0%</span>)</div>
+            <div class="mb-1">Q4: <span id="q4-score">0/0</span> (<span id="q4-percent">0%</span>)</div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        
+        <div id="trial-feedback" class="trial-feedback">
+            <h6 id="feedback-title">Correct!</h6>
+            <p id="feedback-text">Good detection</p>
+        </div>
+        
+        <button class="exit-btn" onclick="exitTest()">
+            <i class="fas fa-times"></i> Exit
+        </button>
+    </div>
+
+    <script>
+        class SPARCSTest {
+            constructor() {
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
+                this.startTime = null;
+                this.currentTrial = 0;
+                this.totalTrials = 40; // 10 trials per quadrant
+                this.correctCount = 0;
+                this.responses = [];
+                this.grid = null;
+                this.currentStimulus = null;
+                this.trialStartTime = null;
+                this.awaitingResponse = false;
+                this.currentTargetQuadrant = null;
+                
+                // Quadrant tracking
+                this.quadrantScores = {
+                    1: { correct: 0, total: 0 },
+                    2: { correct: 0, total: 0 },
+                    3: { correct: 0, total: 0 },
+                    4: { correct: 0, total: 0 }
+                };
+                
+                // Test parameters
+                this.stimulusDuration = 200; // ms
+                this.contrastLevels = [1.0, 0.8, 0.6, 0.4, 0.3]; // Progressive difficulty
+                this.currentContrastIndex = 0;
+                
+                this.initializeTest();
+            }
+            
+            initializeTest() {
+                this.grid = document.getElementById('sparcs-grid');
+            }
+            
+            start() {
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('test-container').style.display = 'flex';
+                this.startTime = new Date();
+                this.nextTrial();
+            }
+            
+            nextTrial() {
+                if (this.currentTrial >= this.totalTrials) {
+                    this.completeTest();
+                    return;
+                }
+                
+                // Update display
+                document.getElementById('current-trial').textContent = this.currentTrial + 1;
+                document.getElementById('correct-count').textContent = this.correctCount;
+                
+                const accuracy = this.currentTrial > 0 ? 
+                    Math.round((this.correctCount / this.currentTrial) * 100) : 0;
+                document.getElementById('accuracy').textContent = accuracy + '%';
+                
+                // Update progress
+                const progress = (this.currentTrial / this.totalTrials) * 100;
+                document.getElementById('progress-fill').style.width = progress + '%';
+                
+                // Clear any existing stimulus
+                this.clearStimulus();
+                this.resetQuadrantHighlights();
+                
+                // Wait random interval before showing stimulus
+                const delay = 1000 + Math.random() * 1500;
+                
+                setTimeout(() => {
+                    this.showStimulus();
+                }, delay);
+            }
+            
+            showStimulus() {
+                // Select random quadrant (ensure balanced distribution)
+                this.currentTargetQuadrant = this.selectBalancedQuadrant();
+                
+                // Determine contrast level based on progress
+                const progressRatio = this.currentTrial / this.totalTrials;
+                this.currentContrastIndex = Math.min(
+                    this.contrastLevels.length - 1,
+                    Math.floor(progressRatio * this.contrastLevels.length)
+                );
+                
+                // Create stimulus dot in target quadrant
+                this.createStimulusDot();
+                
+                this.trialStartTime = Date.now();
+                this.awaitingResponse = true;
+                
+                // Auto-hide stimulus after duration
+                setTimeout(() => {
+                    if (this.currentStimulus) {
+                        this.currentStimulus.classList.remove('visible');
+                    }
+                }, this.stimulusDuration);
+                
+                // Auto-complete trial after timeout (5 seconds)
+                setTimeout(() => {
+                    if (this.awaitingResponse) {
+                        this.handleResponse(null, true);
+                    }
+                }, 5000);
+            }
+            
+            selectBalancedQuadrant() {
+                // Find quadrant with least trials to maintain balance
+                let minTrials = Math.min(...Object.values(this.quadrantScores).map(q => q.total));
+                let availableQuadrants = [];
+                
+                for (let i = 1; i <= 4; i++) {
+                    if (this.quadrantScores[i].total === minTrials) {
+                        availableQuadrants.push(i);
+                    }
+                }
+                
+                return availableQuadrants[Math.floor(Math.random() * availableQuadrants.length)];
+            }
+            
+            createStimulusDot() {
+                const quadrant = document.querySelector(`.quadrant-${this.currentTargetQuadrant}`);
+                const quadrantRect = quadrant.getBoundingClientRect();
+                const gridRect = this.grid.getBoundingClientRect();
+                
+                // Position dot randomly within quadrant
+                const margin = 30;
+                const relativeX = margin + Math.random() * (quadrantRect.width / 2 - 2 * margin);
+                const relativeY = margin + Math.random() * (quadrantRect.height / 2 - 2 * margin);
+                
+                // Calculate absolute position within grid
+                let absoluteX, absoluteY;
+                
+                switch (this.currentTargetQuadrant) {
+                    case 1: // Upper left
+                        absoluteX = relativeX;
+                        absoluteY = relativeY;
+                        break;
+                    case 2: // Upper right
+                        absoluteX = this.grid.offsetWidth / 2 + relativeX;
+                        absoluteY = relativeY;
+                        break;
+                    case 3: // Lower left
+                        absoluteX = relativeX;
+                        absoluteY = this.grid.offsetHeight / 2 + relativeY;
+                        break;
+                    case 4: // Lower right
+                        absoluteX = this.grid.offsetWidth / 2 + relativeX;
+                        absoluteY = this.grid.offsetHeight / 2 + relativeY;
+                        break;
+                }
+                
+                // Create stimulus dot
+                this.currentStimulus = document.createElement('div');
+                this.currentStimulus.className = 'stimulus-dot';
+                this.currentStimulus.style.left = absoluteX + 'px';
+                this.currentStimulus.style.top = absoluteY + 'px';
+                this.currentStimulus.style.opacity = this.contrastLevels[this.currentContrastIndex];
+                
+                this.grid.appendChild(this.currentStimulus);
+                
+                // Make visible after small delay
+                setTimeout(() => {
+                    if (this.currentStimulus) {
+                        this.currentStimulus.classList.add('visible');
+                    }
+                }, 50);
+            }
+            
+            selectQuadrant(selectedQuadrant) {
+                if (!this.awaitingResponse) return;
+                
+                this.handleResponse(selectedQuadrant, false);
+            }
+            
+            handleResponse(selectedQuadrant, isTimeout) {
+                if (!this.awaitingResponse) return;
+                
+                this.awaitingResponse = false;
+                const responseTime = Date.now() - this.trialStartTime;
+                const isCorrect = selectedQuadrant === this.currentTargetQuadrant;
+                
+                // Highlight selected quadrant
+                if (selectedQuadrant) {
+                    const quadrantElement = document.querySelector(`.quadrant-${selectedQuadrant}`);
+                    quadrantElement.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+                
+                // Show correct quadrant if wrong or timeout
+                if (!isCorrect && !isTimeout) {
+                    const correctQuadrant = document.querySelector(`.quadrant-${this.currentTargetQuadrant}`);
+                    correctQuadrant.classList.add('correct');
+                }
+                
+                // Update scores
+                this.quadrantScores[this.currentTargetQuadrant].total++;
+                if (isCorrect) {
+                    this.correctCount++;
+                    this.quadrantScores[this.currentTargetQuadrant].correct++;
+                }
+                
+                // Record response
+                this.responses.push({
+                    trialIndex: this.currentTrial,
+                    targetQuadrant: this.currentTargetQuadrant,
+                    selectedQuadrant: selectedQuadrant,
+                    isCorrect: isCorrect,
+                    isTimeout: isTimeout,
+                    contrastLevel: this.contrastLevels[this.currentContrastIndex],
+                    responseTime: responseTime,
+                    timestamp: new Date()
+                });
+                
+                // Show feedback
+                this.showFeedback(isCorrect, isTimeout);
+                
+                // Update quadrant scores display
+                this.updateQuadrantScores();
+                
+                // Move to next trial after delay
+                setTimeout(() => {
+                    this.currentTrial++;
+                    this.nextTrial();
+                }, 1500);
+            }
+            
+            showFeedback(isCorrect, isTimeout) {
+                const feedback = document.getElementById('trial-feedback');
+                const title = document.getElementById('feedback-title');
+                const text = document.getElementById('feedback-text');
+                
+                if (isTimeout) {
+                    title.textContent = 'No Response';
+                    text.textContent = 'Please respond when you see the stimulus';
+                } else if (isCorrect) {
+                    title.textContent = 'Correct!';
+                    text.textContent = `Quadrant ${this.currentTargetQuadrant} detected`;
+                } else {
+                    title.textContent = 'Incorrect';
+                    text.textContent = `Stimulus was in Quadrant ${this.currentTargetQuadrant}`;
+                }
+                
+                feedback.style.display = 'block';
+                
+                setTimeout(() => {
+                    feedback.style.display = 'none';
+                }, 1200);
+            }
+            
+            updateQuadrantScores() {
+                for (let i = 1; i <= 4; i++) {
+                    const score = this.quadrantScores[i];
+                    const percentage = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0;
+                    
+                    document.getElementById(`q${i}-score`).textContent = `${score.correct}/${score.total}`;
+                    document.getElementById(`q${i}-percent`).textContent = `${percentage}%`;
+                }
+            }
+            
+            clearStimulus() {
+                if (this.currentStimulus) {
+                    this.currentStimulus.remove();
+                    this.currentStimulus = null;
+                }
+            }
+            
+            resetQuadrantHighlights() {
+                document.querySelectorAll('.quadrant').forEach(q => {
+                    q.classList.remove('correct', 'incorrect', 'active');
+                });
+            }
+            
+            completeTest() {
+                const endTime = new Date();
+                const duration = Math.round((endTime - this.startTime) / 1000);
+                const overallAccuracy = Math.round((this.correctCount / this.totalTrials) * 100);
+                
+                // Calculate per-quadrant performance
+                const quadrantPerformance = {};
+                for (let i = 1; i <= 4; i++) {
+                    const score = this.quadrantScores[i];
+                    quadrantPerformance[`quadrant_${i}`] = score.total > 0 ? 
+                        Math.round((score.correct / score.total) * 100) : 0;
+                }
+                
+                const testData = {
+                    patient_name: this.patientName,
+                    duration: duration,
+                    total_points: this.totalTrials,
+                    correct_points: this.correctCount,
+                    quadrant_1: this.quadrantScores[1].correct,
+                    quadrant_2: this.quadrantScores[2].correct,
+                    quadrant_3: this.quadrantScores[3].correct,
+                    quadrant_4: this.quadrantScores[4].correct,
+                    start_time: this.startTime.toLocaleTimeString(),
+                    end_time: endTime.toLocaleTimeString(),
+                    responses: this.responses
+                };
+                
+                // Save results
+                this.saveResults(testData);
+                
+                // Show results
+                this.showResults(testData, quadrantPerformance);
+            }
+            
+            saveResults(data) {
+                fetch('/api/save_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Results saved:', result);
+                })
+                .catch(error => {
+                    console.error('Error saving results:', error);
+                });
+            }
+            
+            showResults(data, quadrantPerformance) {
+                const weakestQuadrant = Math.min(...Object.values(quadrantPerformance));
+                const strongestQuadrant = Math.max(...Object.values(quadrantPerformance));
+                
+                document.body.innerHTML = `
+                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
+                        <div class="text-center">
+                            <div class="mb-4">
+                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                                <h2>SPARCS Test Completed</h2>
+                            </div>
+                            
+                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
+                                <div class="card-body">
+                                    <h5 class="card-title">Test Results</h5>
+                                    <hr>
+                                    <div class="row text-center mb-3">
+                                        <div class="col-3">
+                                            <h3 class="text-primary">${Math.round((data.correct_points / data.total_points) * 100)}%</h3>
+                                            <small>Overall Accuracy</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-info">${data.duration}s</h3>
+                                            <small>Duration</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-success">${data.correct_points}/${data.total_points}</h3>
+                                            <small>Score</small>
+                                        </div>
+                                        <div class="col-3">
+                                            <h3 class="text-warning">${Math.abs(strongestQuadrant - weakestQuadrant)}%</h3>
+                                            <small>Variation</small>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-6">
+                                            <h6>Quadrant Performance:</h6>
+                                            <div class="text-start">
+                                                <div class="mb-1">Q1 (Upper Left): ${quadrantPerformance.quadrant_1}%</div>
+                                                <div class="mb-1">Q2 (Upper Right): ${quadrantPerformance.quadrant_2}%</div>
+                                                <div class="mb-1">Q3 (Lower Left): ${quadrantPerformance.quadrant_3}%</div>
+                                                <div class="mb-1">Q4 (Lower Right): ${quadrantPerformance.quadrant_4}%</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <h6>Assessment:</h6>
+                                            <p class="text-muted text-start">
+                                                ${Math.round((data.correct_points / data.total_points) * 100) >= 80 ? 
+                                                    'Normal visual field sensitivity across all quadrants.' :
+                                                    weakestQuadrant < 60 ?
+                                                    `Reduced sensitivity detected in one or more quadrants. Consider detailed visual field testing.` :
+                                                    'Mild variations in quadrant sensitivity detected.'
+                                                }
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:8000/patient'">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Back to Tests
+                                </button>
+                                <button class="btn btn-success btn-lg" onclick="location.reload()">
+                                    <i class="fas fa-redo me-2"></i>
+                                    Retake Test
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        let test = null;
+        
+        function startTest() {
+            test = new SPARCSTest();
+            test.start();
+        }
+        
+        function selectQuadrant(quadrant) {
+            if (test) {
+                test.selectQuadrant(quadrant);
+            }
+        }
+        
+        function exitTest() {
+            if (confirm('Are you sure you want to exit this test?')) {
+                window.location.href = 'http://' + window.location.hostname + ':8000/patient';
+            }
+        }
+        
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                exitTest();
+            } else if (test && test.awaitingResponse) {
+                switch(e.key) {
+                    case '1':
+                        selectQuadrant(1);
+                        break;
+                    case '2':
+                        selectQuadrant(2);
+                        break;
+                    case '3':
+                        selectQuadrant(3);
+                        break;
+                    case '4':
+                        selectQuadrant(4);
+                        break;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
