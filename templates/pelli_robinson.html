@@ -534,10 +534,16 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    alert('Test results saved successfully!');
-                    backToTests();
+                    alert('Test completed successfully! Returning to test dashboard...');
+                    setTimeout(() => {
+                        backToTests();
+                    }, 1000);
                 } else {
                     alert('Error saving results: ' + data.message);
+                    // Still return to dashboard even if save failed
+                    setTimeout(() => {
+                        backToTests();
+                    }, 2000);
                 }
             })
             .catch(error => {
@@ -583,14 +589,12 @@
 
         // Auto-focus and mobile optimization
         document.addEventListener('DOMContentLoaded', function() {
-            // Enable fullscreen on mobile
-            if (window.innerWidth <= 768) {
-                setTimeout(() => {
-                    if (confirm('Enable fullscreen for better test experience?')) {
-                        toggleFullscreen();
-                    }
-                }, 1000);
-            }
+            // Auto-enable fullscreen for all devices
+            setTimeout(() => {
+                if (!document.fullscreenElement) {
+                    toggleFullscreen();
+                }
+            }, 500);
         });
     </script>
 </body>
