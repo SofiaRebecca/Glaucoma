@@ -1,0 +1,154 @@
+Build a Flask-based, real-time synchronized Glaucoma Detection System with:
+
+7 ophthalmic tests
+
+Mobile-optimized patient view
+
+Doctor screen mirroring and test control
+
+Excel result logging after each test
+
+Fullscreen support
+
+Tests can be skipped
+
+Patient and doctor connect independently
+
+📂 PROJECT STRUCTURE (Updated)
+php
+Copy
+Edit
+GLAUCOMA/
+│
+├── main.py                        # Central Flask controller (port 8000)
+├── excel_writer.py               # Excel writer (auto-save after every test)
+├── glaucoma_test_results.xlsx    # Excel workbook, 1 sheet per test
+│
+├── static/                       # CSS/JS (fullscreen, mobile styles)
+├── templates/                    # Jinja2 HTML
+│   ├── doctor.html               # Doctor dashboard
+│   ├── patient.html              # Patient listener
+│   ├── instructions.html         # Scrollable test intro
+│
+├── visual_field_test/           # Port 8001
+│   └── app.py
+│
+├── motion_test/                 # Port 8004
+│   └── app.py
+│
+# ... repeat for other tests ...
+🔄 Doctor and Patient Connect Independently
+If patient connects first, they see "Waiting for doctor…" and auto-redirect when doctor sends a test
+
+If doctor connects first, they see "Patient not connected", but can:
+
+Queue a test → will launch when patient connects
+
+Skip the current test
+
+WebSocket-based state sync ensures patient gets current test if doctor already queued it
+
+Server stores state in memory or JSON file (Replit-friendly, Redis optional)
+
+🔘 Skip Test Option
+Doctor dashboard includes a "Skip Test" button
+
+When clicked:
+
+Test result is marked as "Skipped" in Excel
+
+Patient view redirects to next test or /done
+
+Skipped tests do not block session progression
+
+✅ ADDITIONAL FIXES INCLUDED
+📲 Mobile + Fullscreen Patient View
+viewport meta tag
+
+100vh layout
+
+Fullscreen button before and during test
+
+🔁 Visual Field Test
+Counts as "seen" if click occurs within 1500ms, regardless of location
+
+🧭 Motion Test
+Moving dot → patient picks direction with arrows
+
+Direction validated + logged
+
+📝 Excel Logging
+Each test result saved immediately via excel_writer.py
+
+Data logged:
+
+Timestamp
+
+Patient ID
+
+Test name
+
+Responses
+
+Score/accuracy
+
+Doctor notes
+
+Skipped/Completed
+
+Fullscreen used
+
+🧪 Modular Test Apps (Ports 8001–8007)
+Each test is its own Flask app
+
+/start route → begins test
+
+/submit route → posts result to central app
+
+After submit, redirects to /next_test
+
+🖼 Doctor Dashboard
+Live patient screen in iframe
+
+Buttons:
+
+Start any test
+
+Skip current test
+
+Add notes
+
+Displays real-time test state and patient status
+
+Optionally overlays draggable rectangle for directing patient interaction
+
+🧑‍🔬 Patient View
+Loads fullscreen interface
+
+Displays test on command
+
+Auto-redirects between tests
+
+Displays "Waiting for doctor" if no test active
+
+📦 Deployment
+No login required
+
+Fully offline
+
+Works on Replit or local PC
+
+Uses flask-socketio with async_mode="threading" and cors_allowed_origins="*"
+
+🧠 Summary Flow
+Patient opens http://localhost:8000/patient on phone → gets "Waiting…" screen
+
+Doctor opens http://localhost:8000/doctor → sees dashboard
+
+Doctor starts a test → patient view redirects
+
+Patient takes test → result saved to Excel
+
+Doctor skips/test completes → next test launched
+
+Session proceeds until all tests done
