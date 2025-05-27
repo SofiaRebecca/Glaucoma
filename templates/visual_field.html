@@ -605,6 +605,13 @@
                         this.handleResponse(false);
                     }
                 }, 500);
+
+                // Auto-timeout after 1500ms (no response window)
+                setTimeout(() => {
+                    if (this.stimulusActive && !this.responseReceived) {
+                        this.stimulusActive = false;
+                    }
+                }, 1500);
             }
 
             calculateIntensity(thresholdIndex) {
@@ -614,8 +621,9 @@
             }
 
             handleGlobalClick() {
-                if (this.stimulusActive && !this.responseReceived) {
+                if (!this.responseReceived && this.stimulusStartTime) {
                     const responseTime = Date.now() - this.stimulusStartTime;
+                    // Accept any click within 1500ms of stimulus appearing as "seen"
                     if (responseTime >= 50 && responseTime <= 1500) {
                         this.handleResponse(true);
                     }
