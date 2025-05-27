@@ -1,2 +1,30 @@
-The code changes the back button functionality to redirect to the correct path.
-```
+saveResults(data) {
+                const testData = {
+                    test_name: 'pelli_robinson',
+                    patient_name: data.patient_name,
+                    duration: data.duration,
+                    total_points: data.total_points,
+                    correct_points: data.correct_points,
+                    language: data.language,
+                    contrast_sensitivity: data.contrast_sensitivity,
+                    log_units: data.log_units,
+                    start_time: data.start_time,
+                    end_time: data.end_time,
+                    responses: data.responses
+                };
+
+                fetch('/api/save_test_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                })
+                .then(response => response.json())
+                .then(result => {
+                    console.log('Results saved:', result);
+                })
+                .catch(error => {
+                    console.error('Error saving results:', error);
+                });
+            }

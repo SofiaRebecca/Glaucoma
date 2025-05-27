@@ -139,7 +139,7 @@ class ExcelWriter:
                         str(test_data.get('contrast_levels', [])),
                         test_data.get('letter_accuracy', 0)
                     ])
-                elif test_name == 'pelli_robinson':
+                elif test_name == 'pelli_robinson' or test_name == 'pelli_robson':
                     row_data.extend([
                         test_data.get('language', 'English'),
                         test_data.get('contrast_sensitivity', 0),
