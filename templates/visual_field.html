@@ -2,13 +2,10 @@
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visual Field Test</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <style>
         body {
             background: #000;
@@ -27,9 +24,43 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            flex-direction: column;
         }
 
-        .fixation-cross {
+        .visual-field-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(6, 1fr);
+            gap: 20px;
+            width: 80vw;
+            height: 70vh;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 20px;
+            background: #111;
+            position: relative;
+        }
+
+        .test-point {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-point.active {
+            background: white;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
+        }
+
+        .test-point.clicked {
+            background: #28a745;
+            border-color: #28a745;
+        }
+
+        .fixation-point {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -37,21 +68,7 @@
             color: red;
             font-size: 24px;
             z-index: 10;
-        }
-
-        .test-point {
-            position: absolute;
-            width: 8px;
-            height: 8px;
-            background: white;
-            border-radius: 50%;
-            opacity: 0;
-            cursor: pointer;
-            transition: opacity 0.3s ease;
-        }
-
-        .test-point.visible {
-            opacity: 1;
+            font-weight: bold;
         }
 
         .instructions {
@@ -70,56 +87,38 @@
             position: fixed;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 14px;
-        }
-
-        .exit-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: rgba(220, 53, 69, 0.8);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        /* Mobile responsiveness */
-        @media (max-width: 768px) {
-            .test-info {
-                font-size: 14px;
-                padding: 10px;
-                top: 10px;
-                left: 10px;
-            }
-
-            .exit-btn {
-                padding: 8px 12px;
-                font-size: 12px;
-                top: 10px;
-                right: 10px;
-            }
-        }
-
-        /* Mobile fullscreen button */
-        #test-fullscreen-fab {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 123, 255, 0.8);
-            color: white;
-            border: none;
+            background: rgba(0, 0, 0, 0.8);
             padding: 15px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 20px;
-            z-index: 1000;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
             display: none;
         }
+
+        .controls.show {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .btn-danger { background: #dc3545; color: white; }
     </style>
 </head>
 <body>
@@ -129,15 +128,16 @@
             Visual Field Test
         </h2>
         <p class="mb-4">
-            This test evaluates your peripheral vision using a 54-point grid pattern.
+            This test evaluates your peripheral vision by detecting points of light in your visual field.
         </p>
         <div class="mb-4">
             <h5>Instructions:</h5>
             <ul class="text-start">
-                <li>Keep your eyes focused on the red cross in the center</li>
-                <li>Click on white dots as they appear in your peripheral vision</li>
-                <li>Respond within 1.5 seconds when you see a dot</li>
-                <li>Do not move your eyes away from the center cross</li>
+                <li>Keep your eyes focused on the red center point at all times</li>
+                <li>Click when you see a white point appear in your peripheral vision</li>
+                <li>Do not move your eyes from the center point</li>
+                <li>The test will show points at different locations and intensities</li>
+                <li>Click as soon as you see each point</li>
             </ul>
         </div>
         <button class="btn btn-primary btn-lg" onclick="startTest()">
@@ -147,387 +147,234 @@
     </div>
 
     <div id="test-container" class="test-container" style="display: none;">
-        <div class="fixation-cross">+</div>
         <div class="test-info">
-            <div>Point: <span id="current-point">0</span> / 54</div>
-            <div>Seen: <span id="points-seen">0</span></div>
+            <div>Point: <span id="current-point">0</span> / 48</div>
+            <div>Detected: <span id="detected-count">0</span></div>
+            <div>Accuracy: <span id="accuracy">0%</span></div>
         </div>
-        <button class="exit-btn" onclick="exitTest()">
-            <i class="fas fa-times"></i> Exit
-        </button>
+
+        <div class="visual-field-grid">
+            <div class="fixation-point">+</div>
+            <!-- Grid points will be generated by JavaScript -->
+        </div>
+
+        <div class="controls" id="controls">
+            <button class="btn btn-warning" onclick="skipPoint()">
+                <i class="fas fa-forward me-2"></i>
+                Skip Point
+            </button>
+            <button class="btn btn-danger" onclick="endTest()">
+                <i class="fas fa-stop me-2"></i>
+                End Test
+            </button>
+        </div>
     </div>
 
-    <!-- Mobile fullscreen floating action button -->
-    <button id="test-fullscreen-fab" onclick="toggleFullscreen()" style="display:none">
-        <i class="fas fa-expand"></i>
-    </button>
-
     <script>
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
-        // Auto-hide address bar on mobile load
-        window.addEventListener('load', function() {
-            if (isMobileDevice()) {
-                setTimeout(() => {
-                    window.scrollTo(0, 1);
-                    document.body.style.minHeight = '100vh';
-                }, 100);
-            }
-        });
-
-        // Handle orientation change
-        window.addEventListener('orientationchange', function() {
-            if (isMobileDevice()) {
-                setTimeout(() => {
-                    window.scrollTo(0, 1);
-                }, 500);
-            }
-        });
-
-        function toggleFullscreen() {
-            const elem = document.documentElement;
-            const fab = document.getElementById('test-fullscreen-fab');
-
-            if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen();
-                } else if (elem.webkitRequestFullscreen) {
-                    elem.webkitRequestFullscreen();
-                } else if (elem.mozRequestFullScreen) {
-                    elem.mozRequestFullScreen();
-                } else if (elem.msRequestFullscreen) {
-                    elem.msRequestFullscreen();
-                }
-
-                // For mobile devices, also hide address bar
-                if (isMobileDevice()) {
-                    setTimeout(() => {
-                        window.scrollTo(0, 1);
-                        document.body.style.height = '100vh';
-                        document.body.style.overflow = 'hidden';
-                    }, 100);
-                }
-
-                if (fab) fab.innerHTML = '<i class="fas fa-compress"></i>';
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-
-                if (fab) fab.innerHTML = '<i class="fas fa-expand"></i>';
-            }
-        }
         class VisualFieldTest {
             constructor() {
-                this.patientName = localStorage.getItem('patientName') || 'Unknown';
-                this.startTime = null;
                 this.currentPoint = 0;
-                this.totalPoints = 54;
-                this.pointsSeen = 0;
-                this.responses = [];
+                this.totalPoints = 48;
+                this.detectedCount = 0;
+                this.testData = [];
+                this.startTime = new Date();
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
+                this.isTestActive = false;
+                this.currentTimeout = null;
 
-                // 4-2 staircase parameters
-                this.intensityLevels = [0.1, 0.2, 0.3, 0.5, 0.7, 1.0];
-                this.pointIntensities = new Array(54).fill(3); // Start at mid-level
-
-                this.testPoints = this.generateTestPoints();
-                this.currentStimulus = null;
-                this.stimulusStartTime = null;
-                this.stimulusActive = false;
-                this.responseReceived = false;
-                this.testContainer = document.getElementById('test-container');
+                this.setupGrid();
             }
 
-            generateTestPoints() {
-                // Generate 54-point 24-2 grid pattern
-                const points = [];
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const gridSize = Math.min(window.innerWidth, window.innerHeight) * 0.4;
+            setupGrid() {
+                const grid = document.querySelector('.visual-field-grid');
 
-                // 24-2 pattern approximation
-                const pattern = [
-                    // Central points
-                    {x: 0, y: 0}, {x: -1, y: 0}, {x: 1, y: 0}, {x: 0, y: -1}, {x: 0, y: 1},
-                    // Inner ring
-                    {x: -2, y: 0}, {x: 2, y: 0}, {x: 0, y: -2}, {x: 0, y: 2},
-                    {x: -1, y: -1}, {x: 1, y: -1}, {x: -1, y: 1}, {x: 1, y: 1},
-                    // Middle ring
-                    {x: -3, y: 0}, {x: 3, y: 0}, {x: 0, y: -3}, {x: 0, y: 3},
-                    {x: -2, y: -2}, {x: 2, y: -2}, {x: -2, y: 2}, {x: 2, y: 2},
-                    {x: -3, y: -1}, {x: 3, y: -1}, {x: -3, y: 1}, {x: 3, y: 1},
-                    {x: -1, y: -3}, {x: 1, y: -3}, {x: -1, y: 3}, {x: 1, y: 3},
-                    // Outer ring
-                    {x: -4, y: 0}, {x: 4, y: 0}, {x: 0, y: -4}, {x: 0, y: 4},
-                    {x: -3, y: -3}, {x: 3, y: -3}, {x: -3, y: 3}, {x: 3, y: 3},
-                    {x: -4, y: -2}, {x: 4, y: -2}, {x: -4, y: 2}, {x: 4, y: 2},
-                    {x: -2, y: -4}, {x: 2, y: -4}, {x: -2, y: 4}, {x: 2, y: 4},
-                    // Extended points
-                    {x: -5, y: 0}, {x: 5, y: 0}, {x: 0, y: -5}, {x: 0, y: 5},
-                    {x: -4, y: -4}, {x: 4, y: -4}, {x: -4, y: 4}, {x: 4, y: 4},
-                    {x: -5, y: -3}, {x: 5, y: -3}, {x: -5, y: 3}, {x: 5, y: 3},
-                    {x: -3, y: -5}, {x: 3, y: -5}, {x: -3, y: 5}, {x: 3, y: 5}
-                ];
+                // Create 8x6 grid of test points
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 8; col++) {
+                        const point = document.createElement('div');
+                        point.className = 'test-point';
+                        point.dataset.row = row;
+                        point.dataset.col = col;
+                        point.dataset.index = row * 8 + col;
 
-                pattern.forEach((point, index) => {
-                    if (index < 54) {
-                        points.push({
-                            id: index,
-                            x: centerX + (point.x * gridSize / 10),
-                            y: centerY + (point.y * gridSize / 10),
-                            intensity: this.pointIntensities[index] || 3
-                        });
+                        point.addEventListener('click', () => this.pointClicked(point));
+
+                        grid.appendChild(point);
                     }
-                });
-
-                return points;
+                }
             }
 
             start() {
                 document.getElementById('instructions').style.display = 'none';
-                this.testContainer.style.display = 'flex';
+                document.getElementById('test-container').style.display = 'block';
+                document.getElementById('controls').classList.add('show');
+
+                this.isTestActive = true;
                 this.startTime = new Date();
-
-                // Show mobile fullscreen button during test
-                if (isMobileDevice()) {
-                    document.getElementById('test-fullscreen-fab').style.display = 'block';
-                }
-
-                // Add global click handler for any click during stimulus presentation
-                document.addEventListener('click', (e) => this.handleGlobalClick(e));
-
-                this.nextPoint();
+                this.showNextPoint();
             }
 
-            nextPoint() {
-                if (this.currentPoint >= this.totalPoints) {
+            showNextPoint() {
+                if (this.currentPoint >= this.totalPoints || !this.isTestActive) {
                     this.completeTest();
                     return;
                 }
 
-                // Update display
-                document.getElementById('current-point').textContent = this.currentPoint + 1;
-                document.getElementById('points-seen').textContent = this.pointsSeen;
-
-                // Wait random interval (500-2000ms)
-                const delay = 500 + Math.random() * 1500;
-
-                setTimeout(() => {
-                    this.showStimulus();
-                }, delay);
-            }
-
-            showStimulus() {
-                const point = this.testPoints[this.currentPoint];
-                const intensity = this.intensityLevels[point.intensity];
-
-                // Create stimulus dot
-                this.currentStimulus = document.createElement('div');
-                this.currentStimulus.className = 'test-point visible';
-                this.currentStimulus.style.left = point.x + 'px';
-                this.currentStimulus.style.top = point.y + 'px';
-                this.currentStimulus.style.opacity = intensity;
-
-                // Set stimulus timing
-                this.stimulusStartTime = Date.now();
-                this.stimulusActive = true;
-                this.responseReceived = false;
-
-                this.testContainer.appendChild(this.currentStimulus);
-
-                // Auto-hide after 1.5 seconds
-                setTimeout(() => {
-                    if (this.stimulusActive && !this.responseReceived) {
-                        this.handleResponse(false);
-                    }
-                }, 1500);
-            }
-
-            handleGlobalClick(e) {
-                // Only respond if stimulus is active and no response received yet
-                if (this.stimulusActive && !this.responseReceived) {
-                    const currentTime = Date.now();
-                    const timeSinceStimulus = currentTime - this.stimulusStartTime;
-
-                    // Accept any click within 1500ms as "seen"
-                    if (timeSinceStimulus <= 1500) {
-                        this.handleResponse(true);
-                    }
-                }
-            }
-
-            handleResponse(seen) {
-                if (!this.stimulusActive || this.responseReceived) return;
-
-                this.responseReceived = true;
-                this.stimulusActive = false;
-
-                const responseTime = Date.now() - this.stimulusStartTime;
-                const point = this.testPoints[this.currentPoint];
-
-                // Record response
-                this.responses.push({
-                    pointId: point.id,
-                    x: point.x,
-                    y: point.y,
-                    intensity: point.intensity,
-                    seen: seen,
-                    responseTime: responseTime,
-                    timestamp: new Date()
+                // Clear previous point
+                document.querySelectorAll('.test-point.active').forEach(p => {
+                    p.classList.remove('active');
                 });
 
-                if (seen) {
-                    this.pointsSeen++;
-                    // 4-2 staircase: decrease intensity if seen
-                    if (point.intensity > 0) {
-                        this.pointIntensities[this.currentPoint] = Math.max(0, point.intensity - 1);
-                    }
-                } else {
-                    // 4-2 staircase: increase intensity if not seen
-                    if (point.intensity < this.intensityLevels.length - 1) {
-                        this.pointIntensities[this.currentPoint] = Math.min(
-                            this.intensityLevels.length - 1, 
-                            point.intensity + 1
-                        );
-                    }
+                // Show random point
+                const points = document.querySelectorAll('.test-point');
+                const randomIndex = Math.floor(Math.random() * points.length);
+                const point = points[randomIndex];
+
+                point.classList.add('active');
+                this.currentActivePoint = point;
+                this.pointStartTime = Date.now();
+
+                // Update UI
+                document.getElementById('current-point').textContent = this.currentPoint + 1;
+                document.getElementById('accuracy').textContent = 
+                    this.currentPoint > 0 ? Math.round((this.detectedCount / this.currentPoint) * 100) + '%' : '0%';
+
+                // Auto-advance after 3 seconds
+                this.currentTimeout = setTimeout(() => {
+                    this.pointMissed();
+                }, 3000);
+            }
+
+            pointClicked(clickedPoint) {
+                if (!this.isTestActive || !this.currentActivePoint) return;
+
+                clearTimeout(this.currentTimeout);
+
+                const reactionTime = Date.now() - this.pointStartTime;
+                const isCorrect = clickedPoint === this.currentActivePoint;
+
+                if (isCorrect) {
+                    this.detectedCount++;
+                    clickedPoint.classList.add('clicked');
+                    document.getElementById('detected-count').textContent = this.detectedCount;
                 }
 
-                // Remove stimulus
-                if (this.currentStimulus && this.currentStimulus.parentNode) {
-                    this.currentStimulus.remove();
-                    this.currentStimulus = null;
-                }
+                this.recordResponse(isCorrect, reactionTime);
 
-                // Next point
+                this.currentActivePoint.classList.remove('active');
+                this.currentActivePoint = null;
                 this.currentPoint++;
 
-                setTimeout(() => {
-                    this.nextPoint();
-                }, 200);
+                setTimeout(() => this.showNextPoint(), 500);
+            }
+
+            pointMissed() {
+                if (!this.isTestActive || !this.currentActivePoint) return;
+
+                this.recordResponse(false, 3000);
+
+                this.currentActivePoint.classList.remove('active');
+                this.currentActivePoint = null;
+                this.currentPoint++;
+
+                setTimeout(() => this.showNextPoint(), 500);
+            }
+
+            recordResponse(detected, reactionTime) {
+                const point = this.currentActivePoint;
+
+                this.testData.push({
+                    pointIndex: this.currentPoint,
+                    row: parseInt(point.dataset.row),
+                    col: parseInt(point.dataset.col),
+                    detected: detected,
+                    reactionTime: reactionTime,
+                    timestamp: new Date()
+                });
+            }
+
+            skipPoint() {
+                if (!this.isTestActive) return;
+
+                clearTimeout(this.currentTimeout);
+                this.pointMissed();
+            }
+
+            endTest() {
+                if (confirm('Are you sure you want to end the test?')) {
+                    this.isTestActive = false;
+                    clearTimeout(this.currentTimeout);
+                    this.completeTest();
+                }
             }
 
             completeTest() {
+                this.isTestActive = false;
                 const endTime = new Date();
                 const duration = Math.round((endTime - this.startTime) / 1000);
 
-                // Calculate sensitivity map
-                const sensitivityMap = this.responses.map(r => ({
-                    pointId: r.pointId,
-                    x: r.x,
-                    y: r.y,
-                    sensitivity: r.seen ? 'normal' : 'defect',
-                    finalIntensity: this.intensityLevels[r.intensity]
-                }));
+                const accuracy = this.currentPoint > 0 ? (this.detectedCount / this.currentPoint) * 100 : 0;
 
-                // Detect defects (points not seen at highest intensity)
-                const defectsDetected = this.responses.filter(r => 
-                    !r.seen && r.intensity >= this.intensityLevels.length - 2
-                ).length;
-
-                const testData = {
+                const results = {
                     patient_name: this.patientName,
+                    test_name: 'visual_field',
                     duration: duration,
-                    total_points: this.totalPoints,
-                    correct_points: this.pointsSeen,
-                    points_tested: this.totalPoints,
-                    sensitivity_map: sensitivityMap,
-                    defects_detected: defectsDetected,
-                    start_time: this.startTime.toLocaleTimeString(),
-                    end_time: endTime.toLocaleTimeString(),
-                    responses: this.responses
+                    start_time: this.startTime.toISOString(),
+                    end_time: endTime.toISOString(),
+                    total_points: this.currentPoint,
+                    correct_points: this.detectedCount,
+                    accuracy: accuracy,
+                    points_tested: this.testData.length,
+                    sensitivity_map: this.testData,
+                    defects_detected: this.calculateDefects()
                 };
 
-                // Save results
-                this.saveResults(testData);
-
-                // Show results
-                this.showResults(testData);
+                this.saveResults(results);
             }
 
-            saveResults(data) {
-                fetch('/api/save_result', {
+            calculateDefects() {
+                // Simple defect detection based on missed points in clusters
+                let defects = 0;
+                const missedPoints = this.testData.filter(p => !p.detected);
+
+                // Count clusters of missed points as defects
+                for (let i = 0; i < missedPoints.length; i++) {
+                    const point = missedPoints[i];
+                    const neighbors = missedPoints.filter(p => 
+                        Math.abs(p.row - point.row) <= 1 && 
+                        Math.abs(p.col - point.col) <= 1 && 
+                        p !== point
+                    );
+
+                    if (neighbors.length >= 2) {
+                        defects++;
+                    }
+                }
+
+                return defects;
+            }
+
+            saveResults(results) {
+                fetch('/api/save_test_result', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(results)
                 })
                 .then(response => response.json())
-                .then(result => {
-                    console.log('Results saved:', result);
+                .then(data => {
+                    if (data.success) {
+                        alert(`Test completed!\nAccuracy: ${results.accuracy.toFixed(1)}%\nPoints detected: ${results.correct_points}/${results.total_points}`);
+                        window.location.href = '/patient';
+                    } else {
+                        alert('Error saving results: ' + data.message);
+                    }
                 })
                 .catch(error => {
                     console.error('Error saving results:', error);
+                    alert('Error saving results. Please try again.');
                 });
-            }
-
-            showResults(data) {
-                const accuracy = Math.round((data.correct_points / data.total_points) * 100);
-
-                document.body.innerHTML = `
-                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
-                        <div class="text-center">
-                            <div class="mb-4">
-                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                                <h2>Visual Field Test Completed</h2>
-                            </div>
-
-                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
-                                <div class="card-body">
-                                    <h5 class="card-title">Test Results</h5>
-                                    <hr>
-                                    <div class="row text-center mb-3">
-                                        <div class="col-3">
-                                            <h3 class="text-primary">${accuracy}%</h3>
-                                            <small>Detection Rate</small>
-                                        </div>
-                                        <div class="col-3">
-                                            <h3 class="text-info">${data.duration}s</h3>
-                                            <small>Duration</small>
-                                        </div>
-                                        <div class="col-3">
-                                            <h3 class="text-success">${data.correct_points}/54</h3>
-                                            <small>Points Seen</small>
-                                        </div>
-                                        <div class="col-3">
-                                            <h3 class="text-warning">${data.defects_detected}</h3>
-                                            <small>Defects</small>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-start">
-                                        <h6>Assessment:</h6>
-                                        <p class="text-muted">
-                                            ${data.defects_detected === 0 ? 
-                                                'No significant visual field defects detected.' :
-                                                `${data.defects_detected} potential defect(s) detected. Recommend follow-up evaluation.`
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:8000/patient'">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Back to Tests
-                                </button>
-                                <button class="btn btn-success btn-lg" onclick="location.reload()">
-                                    <i class="fas fa-redo me-2"></i>
-                                    Retake Test
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
             }
         }
 
@@ -538,19 +385,24 @@
             test.start();
         }
 
-        function exitTest() {
-            if (confirm('Are you sure you want to exit this test?')) {
-                window.location.href = 'http://' + window.location.hostname + ':8000/patient';
+        function skipPoint() {
+            if (test) {
+                test.skipPoint();
             }
         }
 
-        // Handle keyboard shortcuts
+        function endTest() {
+            if (test) {
+                test.endTest();
+            }
+        }
+
+        // Handle escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                exitTest();
-            } else if (e.key === ' ' && test && test.currentStimulus) {
-                e.preventDefault();
-                test.handleResponse(true);
+                if (confirm('Are you sure you want to exit the test?')) {
+                    window.location.href = '/patient';
+                }
             }
         });
     </script>

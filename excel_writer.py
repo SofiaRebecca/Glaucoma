@@ -14,13 +14,20 @@ class ExcelWriter:
     def initialize_workbook(self):
         """Initialize Excel workbook with test sheets"""
         try:
+            # Always create a new workbook to avoid corruption issues
             if os.path.exists(self.filename):
-                self.workbook = load_workbook(self.filename)
+                try:
+                    self.workbook = load_workbook(self.filename)
+                except Exception as e:
+                    logging.warning(f"Corrupted Excel file detected, creating new one: {e}")
+                    os.remove(self.filename)
+                    self.workbook = Workbook()
             else:
                 self.workbook = Workbook()
-                # Remove default sheet
-                if 'Sheet' in self.workbook.sheetnames:
-                    self.workbook.remove(self.workbook['Sheet'])
+                
+            # Remove default sheet
+            if 'Sheet' in self.workbook.sheetnames:
+                self.workbook.remove(self.workbook['Sheet'])
             
             # Create sheets for each test type
             test_sheets = [

@@ -524,7 +524,7 @@
             };
 
             // Save to main server
-            fetch('http://' + window.location.hostname + ':5000/api/save_test_result', {
+            fetch('/api/save_test_result', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -566,6 +566,12 @@
 
         function backToTests() {
             window.location.href = '/patient';
+        }
+        
+        function exitTest() {
+            if (confirm('Are you sure you want to exit the test?')) {
+                backToTests();
+            }
         }
 
         // Handle escape key
