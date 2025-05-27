@@ -263,13 +263,13 @@
                 this.patientName = localStorage.getItem('patientName') || 'Unknown';
                 this.startTime = null;
                 this.currentRow = 0;
-                this.totalRows = 8;
+                this.totalRows = 12;
                 this.correctCount = 0;
                 this.responses = [];
                 this.currentLanguage = 'english';
                 this.rowStartTime = null;
 
-                this.contrastLevels = [2.25, 2.10, 1.95, 1.80, 1.65, 1.50, 1.35, 1.20];
+                this.contrastLevels = [2.25, 2.15, 2.05, 1.95, 1.85, 1.75, 1.65, 1.55, 1.45, 1.35, 1.25, 1.15];
                 this.lettersPerRow = 6;
 
                 this.letterSets = {
@@ -368,12 +368,13 @@
                     }
                 }
 
-                const contrastRatio = Math.pow(10, -contrastLevel);
-                const grayValue = Math.floor(255 * contrastRatio);
+                // Use a more gradual contrast calculation for better visibility
+                const contrastRatio = Math.pow(10, -(contrastLevel - 1.0)); // Adjust baseline
+                const opacity = Math.max(0.05, Math.min(1.0, contrastRatio * 0.8)); // Ensure minimum visibility
 
                 const lettersText = this.currentRowLetters.join('   ');
                 letterDisplay.innerHTML = lettersText;
-                letterDisplay.style.color = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+                letterDisplay.style.color = `rgba(255, 255, 255, ${opacity})`;
                 letterDisplay.style.fontSize = '72px';
                 console.log('Displaying letters:', lettersText, 'with gray value:', grayValue);
             }
@@ -439,9 +440,13 @@
 
                 this.correctCount += correctLetters;
 
+                // Only stop if 2 consecutive rows have less than 3 correct letters
                 if (correctLetters < 3) {
-                    this.thresholdReached = true;
-                    this.updateThresholdEstimate();
+                    if (this.responses.length > 0 && 
+                        this.responses[this.responses.length - 1].correctCount < 3) {
+                        this.thresholdReached = true;
+                        this.updateThresholdEstimate();
+                    }
                 }
 
                 this.currentRow++;
@@ -499,11 +504,13 @@
 
                 if (contrastLevel > 2.0) {
                     sensitivity = 'Normal';
-                } else if (contrastLevel > 1.8) {
+                } else if (contrastLevel > 1.9) {
+                    sensitivity = 'Borderline';
+                } else if (contrastLevel > 1.7) {
                     sensitivity = 'Mild Reduction';
-                } else if (contrastLevel > 1.6) {
+                } else if (contrastLevel > 1.5) {
                     sensitivity = 'Moderate Reduction';
-                } else if (contrastLevel > 1.4) {
+                } else if (contrastLevel > 1.3) {
                     sensitivity = 'Significant Reduction';
                 } else {
                     sensitivity = 'Severe Reduction';

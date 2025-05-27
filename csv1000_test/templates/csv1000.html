@@ -169,7 +169,7 @@
                 this.patientName = localStorage.getItem('patientName') || 'Unknown';
                 this.startTime = null;
                 this.currentLetterIndex = 0;
-                this.totalLetters = 48; // 8 letters × 6 contrast levels
+                this.totalLetters = 80; // 8 letters × 10 contrast levels
                 this.correctCount = 0;
                 this.responses = [];
                 this.currentLanguage = 'english';
@@ -181,8 +181,8 @@
                     kannada: ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಎ', 'ಏ']
                 };
                 
-                // Contrast levels (percentage)
-                this.contrastLevels = [100, 50, 25, 12.5, 6.25, 3.125];
+                // Contrast levels (percentage) - more gradual progression for normal vision
+                this.contrastLevels = [100, 80, 60, 40, 20, 10, 5, 2.5, 1.25, 0.625];
                 this.currentContrastIndex = 0;
                 this.currentLetterSet = 0;
                 
@@ -289,10 +289,11 @@
                 document.getElementById('correct-count').textContent = this.correctCount;
                 document.getElementById('contrast-level').textContent = currentTest.contrast + '%';
                 
-                // Show letter with contrast
+                // Show letter with contrast using opacity for better visibility
                 const letterDisplay = document.getElementById('letter-display');
                 letterDisplay.textContent = currentTest.letter;
-                letterDisplay.style.filter = `contrast(${currentTest.contrast / 100})`;
+                letterDisplay.style.color = `rgba(255, 255, 255, ${currentTest.contrast / 100})`;
+                letterDisplay.style.filter = 'none';
                 
                 // Generate option buttons
                 this.showOptions(currentTest.options, currentTest.letter);
