@@ -23,35 +23,30 @@ saveResults(data) {
                     body: JSON.stringify(testData)
                 })
                 .then(response => {
-                    console.log('Response received:', response);
                     console.log('Response status:', response.status);
-                    console.log('Response headers:', response.headers);
+                    console.log('Response ok:', response.ok);
                     
                     if (!response.ok) {
-                        return response.text().then(text => {
-                            throw new Error(`HTTP ${response.status}: ${text}`);
-                        });
+                        throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     
-                    return response.text().then(text => {
-                        console.log('Raw response text:', text);
-                        try {
-                            return JSON.parse(text);
-                        } catch (e) {
-                            console.error('JSON parse error:', e);
-                            throw new Error('Invalid JSON response: ' + text);
-                        }
-                    });
+                    return response.json();
                 })
                 .then(result => {
                     console.log('Results saved successfully:', result);
-                    alert('Test results saved successfully!');
+                    if (result.success) {
+                        alert('Test results saved successfully!');
+                        // Redirect back to patient dashboard after a short delay
+                        setTimeout(() => {
+                            window.location.href = '/patient';
+                        }, 1500);
+                    } else {
+                        throw new Error(result.message || 'Failed to save results');
+                    }
                 })
                 .catch(error => {
                     console.error('Error saving results:', error);
-                    console.error('Error type:', typeof error);
-                    console.error('Error message:', error.message || 'Unknown error');
-                    console.error('Full error object:', error);
-                    alert('Error saving results: ' + (error.message || 'Unknown error occurred'));
+                    console.error('Error message:', error.message);
+                    alert('Error saving results: ' + error.message);
                 });
             }

@@ -50,56 +50,35 @@ def save_notes():
         logging.error(f"Error saving notes: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
-@app.route('/api/save_test_result', methods=['POST', 'OPTIONS'])
+@app.route('/api/save_test_result', methods=['POST'])
 def save_test_result():
     """Save test results from individual test modules"""
-    # Handle preflight CORS request
-    if request.method == 'OPTIONS':
-        response = jsonify({'message': 'OK'})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Methods', 'POST')
-        return response
-    
     try:
         logging.info("Received save_test_result request")
-        logging.info(f"Request method: {request.method}")
-        logging.info(f"Request headers: {dict(request.headers)}")
-        
-        # Get data from request
-        data = request.get_json(force=True)
-        logging.info(f"Received data: {data}")
+        data = request.get_json()
         
         if not data:
             logging.error("No JSON data received")
-            response = jsonify({'success': False, 'message': 'No data received'})
-            response.headers.add('Access-Control-Allow-Origin', '*')
-            return response, 400
+            return jsonify({'success': False, 'message': 'No data received'}), 400
             
         test_name = data.get('test_name', 'unknown')
         patient_name = data.get('patient_name', 'Unknown')
         
         logging.info(f"Saving test result for {test_name} - Patient: {patient_name}")
+        logging.debug(f"Test data: {data}")
         
         # Save to Excel
         excel_writer.save_test_result(test_name, patient_name, data)
         
-        response_data = {'success': True, 'message': 'Test result saved successfully'}
-        logging.info(f"Returning response: {response_data}")
-        
-        response = jsonify(response_data)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
+        response = {'success': True, 'message': 'Test result saved successfully'}
+        logging.info("Test result saved successfully")
+        return jsonify(response)
         
     except Exception as e:
         logging.error(f"Error saving test result: {e}")
         import traceback
         logging.error(f"Full traceback: {traceback.format_exc()}")
-        
-        error_response = {'success': False, 'message': str(e)}
-        response = jsonify(error_response)
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # WebSocket events for real-time communication
 @socketio.on('join_doctor')
