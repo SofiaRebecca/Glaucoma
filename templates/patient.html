@@ -10,6 +10,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         .mobile-scroll {
             overflow-y: auto;
@@ -323,6 +324,79 @@
             document.getElementById('patient-info-section').style.display = 'none';
             document.getElementById('test-selection').style.display = 'block';
         });
+
+        // Screen mirroring functionality
+        let screenMirrorActive = false;
+        let screenCaptureInterval = null;
+
+        socket.on('start_screen_share', function(data) {
+            startScreenMirroring();
+        });
+
+        socket.on('doctor_control', function(data) {
+            handleDoctorControl(data);
+        });
+
+        function startScreenMirroring() {
+            if (screenMirrorActive) return;
+            
+            screenMirrorActive = true;
+            
+            // Capture screen every 500ms
+            screenCaptureInterval = setInterval(() => {
+                captureScreen();
+            }, 500);
+        }
+
+        function stopScreenMirroring() {
+            screenMirrorActive = false;
+            if (screenCaptureInterval) {
+                clearInterval(screenCaptureInterval);
+                screenCaptureInterval = null;
+            }
+        }
+
+        function captureScreen() {
+            if (!screenMirrorActive) return;
+            
+            html2canvas(document.body, {
+                scale: 0.3,
+                useCORS: true,
+                allowTaint: true
+            }).then(canvas => {
+                const imageData = canvas.toDataURL('image/jpeg', 0.5);
+                socket.emit('screen_capture_data', {
+                    image: imageData,
+                    timestamp: Date.now(),
+                    patient: patientName
+                });
+            }).catch(err => {
+                console.log('Screen capture failed:', err);
+            });
+        }
+
+        function handleDoctorControl(data) {
+            switch(data.action) {
+                case 'click':
+                    simulateClick(data.x, data.y);
+                    break;
+                case 'scroll':
+                    window.scrollBy(data.deltaX || 0, data.deltaY || 0);
+                    break;
+                case 'navigate':
+                    if (data.url) {
+                        window.location.href = data.url;
+                    }
+                    break;
+            }
+        }
+
+        function simulateClick(x, y) {
+            const element = document.elementFromPoint(x, y);
+            if (element) {
+                element.click();
+            }
+        }
 
         // Handle doctor instructions
         socket.on('doctor_instruction', function(data) {

@@ -179,6 +179,23 @@ def handle_patient_identified(data):
     # Forward to doctor room
     socketio.emit('patient_identified', data, to=doctor_room)
 
+@socketio.on('screen_capture_data')
+def handle_screen_capture(data):
+    """Handle screen capture data from patient for mirroring"""
+    # Forward screen data to doctor
+    socketio.emit('patient_screen_data', data, to=doctor_room)
+
+@socketio.on('doctor_control_command')
+def handle_doctor_control(data):
+    """Handle doctor control commands for patient screen"""
+    # Forward control commands to patient
+    socketio.emit('doctor_control', data, to=patient_room)
+
+@socketio.on('request_screen_share')
+def handle_screen_share_request(data):
+    """Handle doctor's request to start screen sharing"""
+    socketio.emit('start_screen_share', data, to=patient_room)
+
 # Add test routes to serve tests directly from main app
 @app.route('/test/<test_name>')
 def run_test(test_name):
@@ -204,5 +221,5 @@ if __name__ == '__main__':
     # Start main application on port 5000 for Replit compatibility
     logging.info("Starting Glaucoma Detection System on port 5000...")
     
-    # Use Flask development server for better compatibility
-    app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
+    # Use SocketIO run for better mobile compatibility and WebSocket support
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

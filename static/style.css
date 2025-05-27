@@ -150,6 +150,11 @@
 
 /* Mobile-friendly adjustments */
 @media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .test-grid {
         width: 90vw;
         height: 90vw;
@@ -166,6 +171,7 @@
     .container {
         padding-left: 10px;
         padding-right: 10px;
+        overflow-x: hidden;
     }
 
     .card {
@@ -175,20 +181,27 @@
     .btn {
         touch-action: manipulation;
         font-size: 16px; /* Prevents zoom on iOS */
+        min-height: 44px; /* Touch target size */
+        min-width: 44px;
     }
 
     .form-control {
         font-size: 16px; /* Prevents zoom on iOS */
+        min-height: 44px;
     }
 
     .mobile-scroll {
         overflow-y: auto;
+        overflow-x: hidden;
         -webkit-overflow-scrolling: touch;
         padding-bottom: 80px; /* Space for floating buttons */
+        height: calc(100vh - 120px);
+        position: relative;
     }
 
     .test-card {
         min-height: 200px;
+        touch-action: manipulation;
     }
 
     .test-card .card-body {
@@ -201,6 +214,48 @@
 
     .alert {
         font-size: 0.9rem;
+    }
+
+    /* Better scrolling for test instructions */
+    .instructions {
+        max-height: 90vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Improve fullscreen on mobile */
+    .test-container {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Radio button improvements for mobile */
+    .letter-option {
+        min-height: 56px;
+        touch-action: manipulation;
+    }
+
+    .letter-option input[type="radio"] {
+        transform: scale(2);
+        margin-right: 20px;
+    }
+
+    /* Improve input row scrolling */
+    .input-row {
+        max-height: 60vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+    .mobile-scroll,
+    .instructions,
+    .test-container,
+    .input-row {
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
     }
 }
 

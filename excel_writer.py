@@ -14,13 +14,26 @@ class ExcelWriter:
     def initialize_workbook(self):
         """Initialize Excel workbook with test sheets"""
         try:
-            # Always create a new workbook to avoid corruption issues
+            # Check if file exists and is accessible
             if os.path.exists(self.filename):
                 try:
+                    # Try to load existing workbook
                     self.workbook = load_workbook(self.filename)
+                except (PermissionError, OSError) as e:
+                    logging.warning(f"File access issue, creating new workbook: {e}")
+                    # Create backup filename if original is locked
+                    import time
+                    backup_filename = f"glaucoma_test_results_{int(time.time())}.xlsx"
+                    self.filename = backup_filename
+                    self.workbook = Workbook()
                 except Exception as e:
                     logging.warning(f"Corrupted Excel file detected, creating new one: {e}")
-                    os.remove(self.filename)
+                    try:
+                        os.remove(self.filename)
+                    except (PermissionError, OSError):
+                        # If can't delete, use new filename
+                        import time
+                        self.filename = f"glaucoma_test_results_{int(time.time())}.xlsx"
                     self.workbook = Workbook()
             else:
                 self.workbook = Workbook()
@@ -78,6 +91,17 @@ class ExcelWriter:
         """Save workbook to file"""
         try:
             self.workbook.save(self.filename)
+        except (PermissionError, OSError) as e:
+            logging.warning(f"Permission error saving to {self.filename}, trying backup: {e}")
+            # Try saving to backup file
+            import time
+            backup_filename = f"glaucoma_test_results_backup_{int(time.time())}.xlsx"
+            try:
+                self.workbook.save(backup_filename)
+                self.filename = backup_filename
+                logging.info(f"Saved to backup file: {backup_filename}")
+            except Exception as backup_error:
+                logging.error(f"Failed to save to backup file: {backup_error}")
         except Exception as e:
             logging.error(f"Error saving workbook: {e}")
     

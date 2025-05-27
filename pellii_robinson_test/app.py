@@ -21,7 +21,7 @@ def save_result():
         logging.info(f"Received test data: {data}")
 
         # Send results to main server
-        main_server_url = 'http://localhost:5000/api/save_test_result'
+        main_server_url = 'http://0.0.0.0:5000/api/save_test_result'
 
         test_data = {
             'test_name': 'pelli_robinson',

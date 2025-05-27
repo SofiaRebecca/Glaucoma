@@ -1,9 +1,8 @@
-
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit:cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
     <title>Pelli-Robson Contrast Sensitivity Test</title>
@@ -163,10 +162,51 @@
 
         .input-row {
             display: flex;
-            justify-content: center;
-            gap: 10px;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
             margin-bottom: 20px;
-            flex-wrap: wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .letter-option {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            min-height: 60px;
+        }
+
+        .letter-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--bs-primary);
+        }
+
+        .letter-option.selected {
+            background: rgba(0, 123, 255, 0.3);
+            border-color: var(--bs-primary);
+        }
+
+        .letter-option input[type="radio"] {
+            margin-right: 15px;
+            transform: scale(1.5);
+        }
+
+        .letter-display-large {
+            font-size: 24px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
         }
 
         .row-controls {
@@ -203,34 +243,34 @@
                 letter-spacing: 10px;
                 margin-bottom: 20px;
             }
-            
+
             .letter-input {
                 width: 45px;
                 height: 45px;
                 font-size: 20px;
                 margin: 3px;
             }
-            
+
             .instructions {
                 padding: 20px;
                 max-width: 90vw;
             }
-            
+
             .test-info, .contrast-info {
                 font-size: 12px;
                 padding: 8px 12px;
             }
-            
+
             .row-controls {
                 bottom: 60px;
                 gap: 5px;
             }
-            
+
             .row-controls .btn {
                 padding: 8px 12px;
                 font-size: 14px;
             }
-            
+
             .countdown-number {
                 font-size: 80px;
             }
@@ -241,7 +281,7 @@
                 font-size: 36px;
                 letter-spacing: 8px;
             }
-            
+
             .letter-input {
                 width: 40px;
                 height: 40px;
@@ -369,6 +409,7 @@
                 };
 
                 this.currentRowLetters = [];
+                this.selectedLetters = new Array(this.lettersPerRow).fill(null);
                 this.thresholdReached = false;
             }
 
@@ -403,18 +444,18 @@
             showCountdown(callback) {
                 const countdownEl = document.getElementById('countdown');
                 const numberEl = document.getElementById('countdown-number');
-                
+
                 countdownEl.style.display = 'flex';
-                
+
                 let count = 3;
-                
+
                 const updateCountdown = () => {
                     numberEl.textContent = count;
                     numberEl.style.animation = 'none';
                     setTimeout(() => {
                         numberEl.style.animation = 'pulse 1s ease-in-out';
                     }, 10);
-                    
+
                     if (count > 0) {
                         count--;
                         setTimeout(updateCountdown, 1000);
@@ -426,14 +467,14 @@
                         }, 1000);
                     }
                 };
-                
+
                 updateCountdown();
             }
 
             start() {
                 console.log('Starting test...');
                 document.getElementById('instructions').style.display = 'none';
-                
+
                 this.showCountdown(() => {
                     document.getElementById('test-container').style.display = 'flex';
                     document.getElementById('test-fullscreen-fab').style.display = 'block';
@@ -508,41 +549,54 @@
                 console.log('Displaying letters:', lettersText, 'with opacity:', opacity);
             }
 
-            createInputBoxes() {
-                const inputRow = document.getElementById('input-row');
-                inputRow.innerHTML = '';
+          createInputBoxes() {
+            const inputRow = document.getElementById('input-row');
+            inputRow.innerHTML = '';
 
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'letter-input';
-                    input.maxLength = 1;
-                    input.id = `input-${i}`;
+            for (let i = 0; i < this.lettersPerRow; i++) {
+                const letterOptions = this.letterSets[this.currentLanguage];
+                const letterOptionsDiv = document.createElement('div');
+                letterOptionsDiv.className = 'letter-option-group';
 
-                    input.addEventListener('input', (e) => {
-                        if (e.target.value && i < this.lettersPerRow - 1) {
-                            document.getElementById(`input-${i + 1}`).focus();
-                        }
+                letterOptions.forEach(letter => {
+                    const optionDiv = document.createElement('label');
+                    optionDiv.className = 'letter-option';
+
+                    const radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    radioInput.name = `letter-${i}`;
+                    radioInput.value = letter;
+
+                    radioInput.addEventListener('change', () => {
+                        this.selectedLetters[i] = letter;
+                        this.highlightSelected(i, letter);
                     });
 
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Backspace' && !e.target.value && i > 0) {
-                            document.getElementById(`input-${i - 1}`).focus();
-                        } else if (e.key === 'Enter') {
-                            this.nextRow();
-                        }
-                    });
+                    const letterDisplay = document.createElement('span');
+                    letterDisplay.className = 'letter-display-large';
+                    letterDisplay.textContent = letter;
 
-                    inputRow.appendChild(input);
-                }
-
-                setTimeout(() => {
-                    document.getElementById('input-0').focus();
-                }, 100);
+                    optionDiv.appendChild(radioInput);
+                    optionDiv.appendChild(letterDisplay);
+                    letterOptionsDiv.appendChild(optionDiv);
+                });
+                inputRow.appendChild(letterOptionsDiv);
             }
+        }
+
+        highlightSelected(index, selectedLetter) {
+            const letterOptions = document.querySelectorAll(`.letter-option-group:nth-child(${index + 1}) .letter-option`);
+            letterOptions.forEach(option => {
+                if (option.querySelector('input').value === selectedLetter) {
+                    option.classList.add('selected');
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+        }
 
             nextRow() {
-                const userInputs = this.getUserInputs();
+                const userInputs = this.selectedLetters;
                 const responseTime = Date.now() - this.rowStartTime;
 
                 let correctLetters = 0;
@@ -610,21 +664,17 @@
 
             clearInputs() {
                 for (let i = 0; i < this.lettersPerRow; i++) {
-                    const input = document.getElementById(`input-${i}`);
-                    if (input) {
-                        input.value = '';
-                    }
+                    this.selectedLetters[i] = null;
+                    const letterOptions = document.querySelectorAll(`.letter-option-group:nth-child(${i + 1}) .letter-option`);
+                    letterOptions.forEach(option => {
+                        option.classList.remove('selected');
+                        option.querySelector('input').checked = false;
+                    });
                 }
-                document.getElementById('input-0').focus();
             }
 
             getUserInputs() {
-                const inputs = [];
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    const input = document.getElementById(`input-${i}`);
-                    inputs.push(input ? input.value : '');
-                }
-                return inputs;
+                return this.selectedLetters;
             }
 
             updateSensitivityEstimate(contrastLevel) {
@@ -718,11 +768,11 @@
                 })
                 .then(response => {
                     console.log('Response status:', response.status);
-                    
+
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    
+
                     return response.json();
                 })
                 .then(result => {
@@ -842,14 +892,14 @@
 
         function startTestFullscreen() {
             console.log('Start fullscreen test button clicked');
-            
+
             const enterFullscreen = () => {
                 const elem = document.documentElement;
                 const request = elem.requestFullscreen || 
                               elem.webkitRequestFullscreen || 
                               elem.mozRequestFullScreen || 
                               elem.msRequestFullscreen;
-                
+
                 if (request) {
                     request.call(elem).then(() => {
                         console.log('Entered fullscreen successfully');
@@ -880,12 +930,12 @@
 
             if (!document.fullscreenElement && !document.webkitFullscreenElement && 
                 !document.mozFullScreenElement && !document.msFullscreenElement) {
-                
+
                 const request = elem.requestFullscreen || 
                               elem.webkitRequestFullscreen || 
                               elem.mozRequestFullScreen || 
                               elem.msRequestFullscreen;
-                
+
                 if (request) {
                     request.call(elem);
                     if (fab) fab.innerHTML = '<i class="fas fa-compress"></i>';
@@ -895,7 +945,7 @@
                            document.webkitExitFullscreen || 
                            document.mozCancelFullScreen || 
                            document.msExitFullscreen;
-                
+
                 if (exit) {
                     exit.call(document);
                     if (fab) fab.innerHTML = '<i class="fas fa-expand"></i>';
