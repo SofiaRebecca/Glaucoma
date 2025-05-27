@@ -83,6 +83,43 @@ args = "cd sparcs_test_dot && python app.py &"
 task = "shell.exec"
 args = "wait"
 
+[[workflows.workflow]]
+name = "start_individual_tests"
+author = 43007011
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd visual_field_test && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd csv1000_test && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd edge_test && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd motion_test && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd pattern_test && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd pellii_robinson_test && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd sparcs_test_dot && python app.py &"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "wait"
+
 [[ports]]
 localPort = 5000
 externalPort = 80

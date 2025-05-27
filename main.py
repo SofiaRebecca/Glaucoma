@@ -165,28 +165,24 @@ def handle_patient_identified(data):
     # Forward to doctor room
     socketio.emit('patient_identified', data, to=doctor_room)
 
-# Add test routes that redirect to individual test apps
+# Add test routes to serve tests directly from main app
 @app.route('/test/<test_name>')
 def run_test(test_name):
-    """Route to individual test apps for better isolation"""
-    # Port mapping for individual test apps
-    test_ports = {
-        'visual_field': 8001,
-        'csv1000': 8002,
-        'edge': 8003,
-        'motion': 8004,
-        'pattern': 8005,
-        'pelli_robinson': 8006,
-        'sparcs': 8007
+    """Serve tests directly from main app"""
+    # Map test names to template files
+    test_templates = {
+        'visual_field': 'visual_field.html',
+        'csv1000': 'csv1000.html',
+        'edge': 'edge.html',
+        'motion': 'motion.html',
+        'pattern': 'pattern.html',
+        'pelli_robinson': 'pelli_robinson.html',
+        'sparcs': 'sparcs.html'
     }
     
-    port = test_ports.get(test_name)
-    if port:
-        # Use the current host but redirect to the test-specific port
-        import urllib.parse
-        current_host = request.host.split(':')[0]
-        test_url = f"http://{current_host}:{port}/"
-        return redirect(test_url)
+    template = test_templates.get(test_name)
+    if template:
+        return render_template(template)
     else:
         return redirect(url_for('patient_view'))
 
@@ -194,12 +190,5 @@ if __name__ == '__main__':
     # Start main application on port 5000 for Replit compatibility
     logging.info("Starting Glaucoma Detection System on port 5000...")
     
-    # For mobile compatibility, try to enable SSL if certificates are available
-    try:
-        # Try with self-signed certificates for development
-        socketio.run(app, host='0.0.0.0', port=5000, debug=True, 
-                    ssl_context='adhoc', allow_unsafe_werkzeug=True)
-    except Exception as e:
-        logging.warning(f"Could not start with SSL: {e}")
-        logging.info("Starting without SSL...")
-        socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # Start without SSL for better compatibility
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

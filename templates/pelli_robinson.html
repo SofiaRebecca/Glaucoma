@@ -524,7 +524,7 @@
             };
 
             // Save to main server
-            fetch('/api/save_test_result', {
+            fetch('http://' + window.location.hostname + ':5000/api/save_test_result', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
