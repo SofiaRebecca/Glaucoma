@@ -1,760 +1,590 @@
-
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
-    <title>Pelli-Robson Contrast Sensitivity Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pelli-Robinson Contrast Sensitivity Test</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         body {
             background: #000;
             color: white;
-            overflow: hidden;
+            font-family: 'Courier New', monospace;
             margin: 0;
             padding: 0;
+            overflow: hidden;
         }
 
-        .test-container {
-            position: fixed;
-            top: 0;
-            left: 0;
+        .fullscreen-container {
             width: 100vw;
             height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
             flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .test-setup {
+            text-align: center;
+            max-width: 800px;
+            padding: 20px;
         }
 
         .letter-row {
-            font-family: 'Courier New', monospace;
+            font-size: 60px;
             font-weight: bold;
-            margin-bottom: 30px;
-            user-select: none;
-            text-align: center;
-            letter-spacing: 15px;
-            line-height: 1.2;
-            font-size: 72px;
+            margin: 20px 0;
+            letter-spacing: 10px;
+            transition: opacity 0.3s ease;
+        }
+
+        .input-row {
+            margin: 10px 0;
         }
 
         .letter-input {
-            background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: white;
-            padding: 10px;
-            margin: 5px;
+            width: 50px;
+            height: 50px;
+            margin: 0 5px;
             text-align: center;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            width: 60px;
-            height: 60px;
             font-size: 24px;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid #ccc;
+            color: white;
+            border-radius: 5px;
         }
 
         .letter-input:focus {
-            border-color: var(--bs-primary);
+            border-color: #007bff;
             outline: none;
             background: rgba(255, 255, 255, 0.2);
         }
 
-        .instructions {
+        .controls {
             position: fixed;
-            top: 50%;
+            bottom: 20px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 40px;
-            border-radius: 10px;
-            max-width: 600px;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
         }
 
-        .language-toggle {
+        .btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: black;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .progress-bar {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 0;
+            left: 0;
+            height: 4px;
+            background: #007bff;
+            transition: width 0.3s ease;
             z-index: 1000;
         }
 
-        .test-info {
+        .instructions {
             position: fixed;
             top: 20px;
             left: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 5px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 300px;
             font-size: 14px;
         }
 
-        .exit-btn {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(220, 53, 69, 0.8);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
+        .language-selector {
+            margin-bottom: 20px;
         }
 
-        .exit-btn:hover {
-            background: rgba(220, 53, 69, 1);
+        .test-complete {
+            display: none;
+            text-align: center;
         }
 
-        #test-fullscreen-fab {
+        .score-display {
+            font-size: 48px;
+            color: #28a745;
+            margin: 20px 0;
+        }
+
+        .fullscreen-btn {
             position: fixed;
-            bottom: 20px;
+            top: 20px;
             right: 20px;
             background: rgba(0, 123, 255, 0.8);
             color: white;
             border: none;
-            padding: 15px;
+            padding: 10px;
             border-radius: 50%;
+            width: 50px;
+            height: 50px;
             cursor: pointer;
-            font-size: 20px;
             z-index: 1000;
-            display: none;
         }
 
-        .contrast-info {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
-            border-radius: 5px;
-            font-size: 14px;
+        .current-row-indicator {
+            position: absolute;
+            left: -50px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #007bff;
+            font-size: 24px;
         }
 
-        .input-row {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
+        @media (max-width: 768px) {
+            .letter-row {
+                font-size: 40px;
+                letter-spacing: 5px;
+            }
 
-        .row-controls {
-            position: fixed;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 10px;
-        }
+            .letter-input {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+                margin: 0 2px;
+            }
 
-        .progress-display {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px 20px;
-            border-radius: 5px;
-            text-align: center;
-        }
-
-        .fullscreen-start-btn {
-            display: block;
-            margin-top: 15px;
+            .instructions {
+                position: relative;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="instructions" class="instructions">
-        <h2 class="mb-4">
-            <i class="fas fa-low-vision me-2"></i>
-            Pelli-Robson Contrast Sensitivity Test
-        </h2>
-        <p class="mb-4">
-            This test measures your ability to read letters at decreasing contrast levels.
-        </p>
-        <div class="mb-4">
-            <h5>Instructions:</h5>
-            <ul class="text-start">
-                <li>Letter rows will be displayed at different contrast levels</li>
-                <li>Type the letters you can see in the input boxes below each row</li>
-                <li>If you cannot see a letter clearly, make your best guess</li>
-                <li>Press Next to move to the next row when ready</li>
-                <li>The test continues until letters become too faint to read</li>
-            </ul>
-        </div>
-        <div class="mb-4">
-            <h6>Select Language:</h6>
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-primary" id="english-btn" onclick="setLanguage('english')">English</button>
-                <button type="button" class="btn btn-outline-primary" id="kannada-btn" onclick="setLanguage('kannada')">ಕನ್ನಡ</button>
-            </div>
-        </div>
-        <button class="btn btn-primary btn-lg" onclick="startTest()" id="start-btn" disabled>
-            <i class="fas fa-play me-2"></i>
-            Start Test
-        </button>
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">
+        <i class="fas fa-expand"></i>
+    </button>
 
-        <button class="btn btn-info btn-lg fullscreen-start-btn" onclick="startTestFullscreen()" id="start-test-fullscreen-btn">
-            <i class="fas fa-expand me-2"></i>
-            Start Test Fullscreen
-        </button>
+    <div class="progress-bar" id="progressBar"></div>
+
+    <div class="instructions" id="instructions">
+        <h6><i class="fas fa-info-circle"></i> Instructions:</h6>
+        <p>• Letter rows will be displayed at different contrast levels</p>
+        <p>• Type the letters you can see in the input boxes below each row</p>
+        <p>• If you cannot see a letter clearly, make your best guess</p>
+        <p>• Press Next to move to the next row when ready</p>
+        <p>• The test continues until letters become too faint to read</p>
     </div>
 
-    <div id="test-container" class="test-container" style="display: none;">
-        <div class="test-info">
-            <div>Row: <span id="current-row">0</span> / 8</div>
-            <div>Correct: <span id="correct-count">0</span></div>
-            <div>Language: <span id="current-language">English</span></div>
+    <div class="fullscreen-container">
+        <!-- Language Selection -->
+        <div class="test-setup" id="testSetup">
+            <h2><i class="fas fa-eye"></i> Pelli-Robinson Contrast Sensitivity Test</h2>
+
+            <div class="language-selector">
+                <label for="languageSelect">Select Language:</label>
+                <select id="languageSelect" class="form-select">
+                    <option value="english">English</option>
+                    <option value="spanish">Español</option>
+                    <option value="french">Français</option>
+                </select>
+            </div>
+
+            <button class="btn btn-primary" onclick="startTest()">
+                <i class="fas fa-play"></i> Start Test
+            </button>
+
+            <button class="btn btn-warning" onclick="exitTest()">
+                <i class="fas fa-times"></i> Exit Test
+            </button>
         </div>
 
-        <div class="language-toggle">
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-light btn-sm" id="test-english-btn" onclick="switchLanguage('english')">English</button>
-                <button type="button" class="btn btn-outline-light btn-sm" id="test-kannada-btn" onclick="switchLanguage('kannada')">ಕನ್ನಡ</button>
+        <!-- Test Content -->
+        <div class="test-content" id="testContent" style="display: none;">
+            <div class="letter-row" id="letterRow">
+                <span class="current-row-indicator">→</span>
+                <span id="letters">LOADING...</span>
+            </div>
+
+            <div class="input-row" id="inputRow">
+                <!-- Letter inputs will be generated here -->
             </div>
         </div>
 
-        <div class="progress-display">
-            <div>Contrast Level: <span id="contrast-level">2.25</span> log units</div>
-            <div>Current Sensitivity: <span id="current-sensitivity">Normal</span></div>
-        </div>
+        <!-- Test Complete -->
+        <div class="test-complete" id="testComplete">
+            <h2><i class="fas fa-check-circle"></i> Test Complete!</h2>
+            <div class="score-display" id="finalScore">0%</div>
+            <p>Contrast Sensitivity: <span id="contrastResult">0.0 log units</span></p>
+            <p>Total Correct Letters: <span id="totalCorrect">0</span> / <span id="totalLetters">0</span></p>
 
-        <div id="letter-display" class="letter-row">
-            <!-- Letters will be displayed here -->
-        </div>
-
-        <div class="input-row" id="input-row">
-            <!-- Input boxes will be generated here -->
-        </div>
-
-        <div class="row-controls">
-            <button class="btn btn-success" onclick="nextRow()" id="next-btn">
-                <i class="fas fa-arrow-right me-2"></i>
-                Next Row
+            <button class="btn btn-success" onclick="saveResults()">
+                <i class="fas fa-save"></i> Save Results
             </button>
-            <button class="btn btn-warning" onclick="skipRow()">
-                <i class="fas fa-forward me-2"></i>
-                Can't See
-            </button>
-            <button class="btn btn-secondary" onclick="clearInputs()">
-                <i class="fas fa-eraser me-2"></i>
-                Clear
+
+            <button class="btn btn-primary" onclick="backToTests()">
+                <i class="fas fa-arrow-left"></i> Back to Tests
             </button>
         </div>
+    </div>
 
-        <div class="contrast-info">
-            <div>Row Progress: <span id="row-progress">0/6</span></div>
-            <div>Threshold: <span id="threshold-estimate">TBD</span></div>
-        </div>
-
-        <button class="exit-btn" onclick="exitTest()">
-            <i class="fas fa-times"></i> Exit
+    <div class="controls">
+        <button class="btn btn-success" id="nextBtn" onclick="nextRow()" style="display: none;">
+            <i class="fas fa-arrow-right"></i> Next Row
         </button>
 
-        <button id="test-fullscreen-fab" onclick="toggleTestFullscreen()">
-            <i class="fas fa-expand"></i>
+        <button class="btn btn-warning" onclick="skipRow()" style="display: none;" id="skipBtn">
+            <i class="fas fa-forward"></i> Skip Row
+        </button>
+
+        <button class="btn btn-danger" onclick="endTest()" style="display: none;" id="endBtn">
+            <i class="fas fa-stop"></i> End Test
         </button>
     </div>
 
     <script>
-        class PelliRobsonTest {
-            constructor() {
-                this.patientName = localStorage.getItem('patientName') || 'Unknown';
-                this.startTime = null;
-                this.currentRow = 0;
-                this.totalRows = 8;
-                this.correctCount = 0;
-                this.responses = [];
-                this.currentLanguage = 'english';
-                this.rowStartTime = null;
-
-                this.contrastLevels = [2.25, 2.10, 1.95, 1.80, 1.65, 1.50, 1.35, 1.20];
-                this.lettersPerRow = 6;
-
-                this.letterSets = {
-                    english: ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'],
-                    kannada: ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಎ', 'ಏ', 'ಒ', 'ಓ']
-                };
-
-                this.currentRowLetters = [];
-                this.thresholdReached = false;
-            }
-
-            setLanguage(language) {
-                this.currentLanguage = language;
-
-                document.getElementById('english-btn').className = 
-                    language === 'english' ? 'btn btn-primary' : 'btn btn-outline-primary';
-                document.getElementById('kannada-btn').className = 
-                    language === 'kannada' ? 'btn btn-primary' : 'btn btn-outline-primary';
-
-                document.getElementById('start-btn').disabled = false;
-            }
-
-            switchLanguage(language) {
-                if (language === this.currentLanguage) return;
-
-                this.currentLanguage = language;
-
-                document.getElementById('current-language').textContent = 
-                    language === 'english' ? 'English' : 'ಕನ್ನಡ';
-
-                document.getElementById('test-english-btn').className = 
-                    language === 'english' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
-                document.getElementById('test-kannada-btn').className = 
-                    language === 'kannada' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
-
-                this.showCurrentRow();
-            }
-
-            start() {
-                document.getElementById('instructions').style.display = 'none';
-                document.getElementById('test-container').style.display = 'flex';
-                document.getElementById('test-fullscreen-fab').style.display = 'block';
-                this.startTime = new Date();
-                this.showCurrentRow();
-            }
-
-            showCurrentRow() {
-                if (this.currentRow >= this.totalRows || this.thresholdReached) {
-                    this.completeTest();
-                    return;
-                }
-
-                document.getElementById('current-row').textContent = this.currentRow + 1;
-                document.getElementById('correct-count').textContent = this.correctCount;
-
-                const contrastLevel = this.contrastLevels[this.currentRow];
-                document.getElementById('contrast-level').textContent = contrastLevel.toFixed(2);
-
-                this.updateSensitivityEstimate(contrastLevel);
-                this.generateRowLetters();
-                this.displayLetters(contrastLevel);
-                this.createInputBoxes();
-
-                this.rowStartTime = Date.now();
-                document.getElementById('row-progress').textContent = `${this.currentRow + 1}/${this.totalRows}`;
-            }
-
-            generateRowLetters() {
-                const letterSet = this.letterSets[this.currentLanguage];
-                this.currentRowLetters = [];
-
-                if (!letterSet || letterSet.length === 0) {
-                    console.error('No letter set available for language:', this.currentLanguage);
-                    return;
-                }
-
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    const randomIndex = Math.floor(Math.random() * letterSet.length);
-                    const randomLetter = letterSet[randomIndex];
-                    this.currentRowLetters.push(randomLetter);
-                }
-            }
-
-            displayLetters(contrastLevel) {
-                const letterDisplay = document.getElementById('letter-display');
-
-                if (!this.currentRowLetters || this.currentRowLetters.length === 0) {
-                    this.generateRowLetters();
-                    if (!this.currentRowLetters || this.currentRowLetters.length === 0) {
-                        return;
-                    }
-                }
-
-                const contrastRatio = Math.pow(10, -contrastLevel);
-                const grayValue = Math.floor(255 * contrastRatio);
-
-                const lettersText = this.currentRowLetters.join('   ');
-                letterDisplay.innerHTML = lettersText;
-                letterDisplay.style.color = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
-                letterDisplay.style.fontSize = '72px';
-            }
-
-            createInputBoxes() {
-                const inputRow = document.getElementById('input-row');
-                inputRow.innerHTML = '';
-
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    const input = document.createElement('input');
-                    input.type = 'text';
-                    input.className = 'letter-input';
-                    input.maxLength = 1;
-                    input.id = `input-${i}`;
-
-                    input.addEventListener('input', (e) => {
-                        if (e.target.value && i < this.lettersPerRow - 1) {
-                            document.getElementById(`input-${i + 1}`).focus();
-                        }
-                    });
-
-                    input.addEventListener('keydown', (e) => {
-                        if (e.key === 'Backspace' && !e.target.value && i > 0) {
-                            document.getElementById(`input-${i - 1}`).focus();
-                        } else if (e.key === 'Enter') {
-                            this.nextRow();
-                        }
-                    });
-
-                    inputRow.appendChild(input);
-                }
-
-                setTimeout(() => {
-                    document.getElementById('input-0').focus();
-                }, 100);
-            }
-
-            nextRow() {
-                const userInputs = this.getUserInputs();
-                const responseTime = Date.now() - this.rowStartTime;
-
-                let correctLetters = 0;
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    if (userInputs[i] && this.currentRowLetters[i] && 
-                        userInputs[i].toUpperCase() === this.currentRowLetters[i].toUpperCase()) {
-                        correctLetters++;
-                    }
-                }
-
-                const rowAccuracy = correctLetters / this.lettersPerRow;
-
-                this.responses.push({
-                    rowIndex: this.currentRow,
-                    contrastLevel: this.contrastLevels[this.currentRow],
-                    correctLetters: this.currentRowLetters,
-                    userInputs: userInputs,
-                    correctCount: correctLetters,
-                    accuracy: rowAccuracy,
-                    language: this.currentLanguage,
-                    responseTime: responseTime,
-                    timestamp: new Date()
-                });
-
-                this.correctCount += correctLetters;
-
-                if (correctLetters < 3) {
-                    this.thresholdReached = true;
-                    this.updateThresholdEstimate();
-                }
-
-                this.currentRow++;
-
-                setTimeout(() => {
-                    this.showCurrentRow();
-                }, 500);
-            }
-
-            skipRow() {
-                const userInputs = new Array(this.lettersPerRow).fill('');
-                const responseTime = Date.now() - this.rowStartTime;
-
-                this.responses.push({
-                    rowIndex: this.currentRow,
-                    contrastLevel: this.contrastLevels[this.currentRow],
-                    correctLetters: this.currentRowLetters,
-                    userInputs: userInputs,
-                    correctCount: 0,
-                    accuracy: 0,
-                    language: this.currentLanguage,
-                    responseTime: responseTime,
-                    skipped: true,
-                    timestamp: new Date()
-                });
-
-                this.thresholdReached = true;
-                this.updateThresholdEstimate();
-
-                this.currentRow++;
-                this.showCurrentRow();
-            }
-
-            clearInputs() {
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    const input = document.getElementById(`input-${i}`);
-                    if (input) {
-                        input.value = '';
-                    }
-                }
-                document.getElementById('input-0').focus();
-            }
-
-            getUserInputs() {
-                const inputs = [];
-                for (let i = 0; i < this.lettersPerRow; i++) {
-                    const input = document.getElementById(`input-${i}`);
-                    inputs.push(input ? input.value : '');
-                }
-                return inputs;
-            }
-
-            updateSensitivityEstimate(contrastLevel) {
-                let sensitivity = 'Normal';
-
-                if (contrastLevel > 2.0) {
-                    sensitivity = 'Normal';
-                } else if (contrastLevel > 1.8) {
-                    sensitivity = 'Mild Reduction';
-                } else if (contrastLevel > 1.6) {
-                    sensitivity = 'Moderate Reduction';
-                } else if (contrastLevel > 1.4) {
-                    sensitivity = 'Significant Reduction';
-                } else {
-                    sensitivity = 'Severe Reduction';
-                }
-
-                document.getElementById('current-sensitivity').textContent = sensitivity;
-            }
-
-            updateThresholdEstimate() {
-                let thresholdLevel = 2.25;
-
-                for (let i = this.responses.length - 1; i >= 0; i--) {
-                    if (this.responses[i].correctCount >= 3) {
-                        thresholdLevel = this.responses[i].contrastLevel;
-                        break;
-                    }
-                }
-
-                document.getElementById('threshold-estimate').textContent = thresholdLevel.toFixed(2) + ' log units';
-            }
-
-            completeTest() {
-                const endTime = new Date();
-                const duration = Math.round((endTime - this.startTime) / 1000);
-
-                let contrastSensitivity = 2.25;
-                let logUnits = 2.25;
-
-                for (let i = this.responses.length - 1; i >= 0; i--) {
-                    if (this.responses[i].correctCount >= 3) {
-                        contrastSensitivity = this.responses[i].contrastLevel;
-                        logUnits = contrastSensitivity;
-                        break;
-                    }
-                }
-
-                const testData = {
-                    patient_name: this.patientName,
-                    duration: duration,
-                    total_points: this.totalRows * this.lettersPerRow,
-                    correct_points: this.correctCount,
-                    language: this.currentLanguage,
-                    contrast_sensitivity: contrastSensitivity,
-                    log_units: logUnits,
-                    start_time: this.startTime.toLocaleTimeString(),
-                    end_time: endTime.toLocaleTimeString(),
-                    responses: this.responses
-                };
-
-                this.saveResults(testData);
-                this.showResults(testData);
-            }
-
-            saveResults(data) {
-                fetch('/api/save_test_result', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        test_name: 'pelli_robinson',
-                        patient_name: data.patient_name,
-                        duration: data.duration,
-                        total_points: data.total_points,
-                        correct_points: data.correct_points,
-                        language: data.language,
-                        contrast_sensitivity: data.contrast_sensitivity,
-                        log_units: data.log_units,
-                        start_time: data.start_time,
-                        end_time: data.end_time,
-                        responses: data.responses
-                    })
-                })
-                .then(response => response.json())
-                .then(result => {
-                    console.log('Results saved:', result);
-                })
-                .catch(error => {
-                    console.error('Error saving results:', error);
-                });
-            }
-
-            showResults(data) {
-                const sensitivityDescription = this.getSensitivityDescription(data.contrast_sensitivity);
-
-                document.body.innerHTML = `
-                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
-                        <div class="text-center">
-                            <div class="mb-4">
-                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                                <h2>Pelli-Robson Test Completed</h2>
-                            </div>
-
-                            <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
-                                <div class="card-body">
-                                    <h5 class="card-title">Test Results</h5>
-                                    <hr>
-                                    <div class="row text-center mb-3">
-                                        <div class="col-3">
-                                            <h3 class="text-primary">${Math.round((data.correct_points / data.total_points) * 100)}%</h3>
-                                            <small>Letter Accuracy</small>
-                                        </div>
-                                        <div class="col-3">
-                                            <h3 class="text-info">${data.duration}s</h3>
-                                            <small>Duration</small>
-                                        </div>
-                                        <div class="col-3">
-                                            <h3 class="text-success">${data.log_units.toFixed(2)}</h3>
-                                            <small>Log Units</small>
-                                        </div>
-                                        <div class="col-3">
-                                            <h3 class="text-warning">${data.correct_points}/${data.total_points}</h3>
-                                            <small>Score</small>
-                                        </div>
-                                    </div>
-
-                                    <div class="text-start">
-                                        <h6>Contrast Sensitivity Analysis:</h6>
-                                        <p class="text-muted">
-                                            Language: ${data.language === 'english' ? 'English' : 'ಕನ್ನಡ'}<br>
-                                            Contrast threshold: ${data.contrast_sensitivity.toFixed(2)} log units<br>
-                                            Clinical assessment: ${sensitivityDescription}<br>
-                                            ${data.contrast_sensitivity >= 1.8 ? 
-                                                'Normal contrast sensitivity detected.' :
-                                                data.contrast_sensitivity >= 1.5 ?
-                                                'Mild to moderate contrast sensitivity reduction.' :
-                                                'Significant contrast sensitivity impairment detected. Recommend ophthalmologic evaluation.'
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-4">
-                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='/patient'">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Back to Tests
-                                </button>
-                                <button class="btn btn-success btn-lg" onclick="location.reload()">
-                                    <i class="fas fa-redo me-2"></i>
-                                    Retake Test
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-
-            getSensitivityDescription(logUnits) {
-                if (logUnits >= 2.0) return 'Normal';
-                if (logUnits >= 1.8) return 'Mild Reduction';
-                if (logUnits >= 1.6) return 'Moderate Reduction';
-                if (logUnits >= 1.4) return 'Significant Reduction';
-                return 'Severe Reduction';
-            }
-        }
-
-        let test = null;
-
-        function setLanguage(language) {
-            if (!test) {
-                test = new PelliRobsonTest();
-            }
-            test.setLanguage(language);
-        }
-
-        function switchLanguage(language) {
-            if (test) {
-                test.switchLanguage(language);
-            }
-        }
+        let currentRow = 0;
+        let totalRows = 8;
+        let testData = [];
+        let startTime = new Date();
+        let patientName = localStorage.getItem('patientName') || 'Unknown';
+        let selectedLanguage = 'english';
+        let results = {
+            correct: 0,
+            total: 0,
+            responses: [],
+            contrastLevels: []
+        };
+
+        // Letter sequences for different contrast levels
+        const letterSequences = {
+            english: [
+                { contrast: 100, letters: 'RNDHK', level: 'Row 1 (100%)' },
+                { contrast: 50, letters: 'VZCSN', level: 'Row 2 (50%)' },
+                { contrast: 25, letters: 'HOVSZ', level: 'Row 3 (25%)' },
+                { contrast: 12.5, letters: 'NCKDR', level: 'Row 4 (12.5%)' },
+                { contrast: 6.25, letters: 'KRHOV', level: 'Row 5 (6.25%)' },
+                { contrast: 3.125, letters: 'VZDSN', level: 'Row 6 (3.125%)' },
+                { contrast: 1.5625, letters: 'CHODV', level: 'Row 7 (1.56%)' },
+                { contrast: 0.78125, letters: 'NRVKS', level: 'Row 8 (0.78%)' }
+            ],
+            spanish: [
+                { contrast: 100, letters: 'RNDEK', level: 'Fila 1 (100%)' },
+                { contrast: 50, letters: 'VZCSM', level: 'Fila 2 (50%)' },
+                { contrast: 25, letters: 'HOVSZ', level: 'Fila 3 (25%)' },
+                { contrast: 12.5, letters: 'NCKDR', level: 'Fila 4 (12.5%)' },
+                { contrast: 6.25, letters: 'KRHOV', level: 'Fila 5 (6.25%)' },
+                { contrast: 3.125, letters: 'VZDSM', level: 'Fila 6 (3.125%)' },
+                { contrast: 1.5625, letters: 'CHODV', level: 'Fila 7 (1.56%)' },
+                { contrast: 0.78125, letters: 'NRVKS', level: 'Fila 8 (0.78%)' }
+            ],
+            french: [
+                { contrast: 100, letters: 'RNDEK', level: 'Ligne 1 (100%)' },
+                { contrast: 50, letters: 'VZCSM', level: 'Ligne 2 (50%)' },
+                { contrast: 25, letters: 'HOVSZ', level: 'Ligne 3 (25%)' },
+                { contrast: 12.5, letters: 'NCKDR', level: 'Ligne 4 (12.5%)' },
+                { contrast: 6.25, letters: 'KRHOV', level: 'Ligne 5 (6.25%)' },
+                { contrast: 3.125, letters: 'VZDSM', level: 'Ligne 6 (3.125%)' },
+                { contrast: 1.5625, letters: 'CHODV', level: 'Ligne 7 (1.56%)' },
+                { contrast: 0.78125, letters: 'NRVKS', level: 'Ligne 8 (0.78%)' }
+            ]
+        };
 
         function startTest() {
-            if (!test) {
-                test = new PelliRobsonTest();
-                test.setLanguage('english');
-            }
-            test.start();
+            selectedLanguage = document.getElementById('languageSelect').value;
+            document.getElementById('testSetup').style.display = 'none';
+            document.getElementById('testContent').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+            document.getElementById('skipBtn').style.display = 'block';
+            document.getElementById('endBtn').style.display = 'block';
+            document.getElementById('instructions').style.display = 'none';
+
+            startTime = new Date();
+            showCurrentRow();
         }
 
-        function startTestFullscreen() {
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().then(() => {
-                    setTimeout(() => startTest(), 500);
-                }).catch(err => {
-                    console.log('Fullscreen failed, starting test normally');
-                    startTest();
+        function showCurrentRow() {
+            if (currentRow >= totalRows) {
+                completeTest();
+                return;
+            }
+
+            const sequence = letterSequences[selectedLanguage][currentRow];
+            const letters = sequence.letters;
+            const contrast = sequence.contrast;
+
+            // Update progress bar
+            const progress = ((currentRow + 1) / totalRows) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+
+            // Calculate opacity based on contrast level
+            const opacity = Math.max(0.1, contrast / 100);
+
+            // Display letters with reduced contrast
+            const letterElement = document.getElementById('letters');
+            letterElement.textContent = letters;
+            letterElement.style.opacity = opacity;
+            letterElement.style.color = `rgba(255, 255, 255, ${opacity})`;
+
+            // Create input fields
+            const inputRow = document.getElementById('inputRow');
+            inputRow.innerHTML = '';
+
+            for (let i = 0; i < letters.length; i++) {
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'letter-input';
+                input.maxLength = 1;
+                input.dataset.index = i;
+                input.dataset.correct = letters[i];
+
+                // Auto-advance to next input
+                input.addEventListener('input', function(e) {
+                    const value = e.target.value.toUpperCase();
+                    e.target.value = value;
+
+                    // Move to next input
+                    const nextInput = inputRow.children[parseInt(this.dataset.index) + 1];
+                    if (nextInput && value) {
+                        nextInput.focus();
+                    }
+
+                    // Check if all inputs are filled
+                    checkAllInputsFilled();
                 });
-            } else {
-                startTest();
+
+                // Handle backspace
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !this.value) {
+                        const prevInput = inputRow.children[parseInt(this.dataset.index) - 1];
+                        if (prevInput) {
+                            prevInput.focus();
+                        }
+                    }
+                });
+
+                inputRow.appendChild(input);
+            }
+
+            // Focus first input
+            if (inputRow.children.length > 0) {
+                inputRow.children[0].focus();
             }
         }
 
-        function toggleTestFullscreen() {
-            const elem = document.documentElement;
-            const fab = document.getElementById('test-fullscreen-fab');
+        function checkAllInputsFilled() {
+            const inputs = document.querySelectorAll('.letter-input');
+            const allFilled = Array.from(inputs).every(input => input.value.trim() !== '');
 
-            if (!document.fullscreenElement) {
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen();
-                } else if (elem.webkitRequestFullscreen) {
-                    elem.webkitRequestFullscreen();
-                } else if (elem.mozRequestFullScreen) {
-                    elem.mozRequestFullScreen();
-                } else if (elem.msRequestFullscreen) {
-                    elem.msRequestFullscreen();
-                }
-
-                if (fab) fab.innerHTML = '<i class="fas fa-compress"></i>';
+            if (allFilled) {
+                document.getElementById('nextBtn').style.background = '#28a745';
+                document.getElementById('nextBtn').style.transform = 'scale(1.1)';
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-
-                if (fab) fab.innerHTML = '<i class="fas fa-expand"></i>';
+                document.getElementById('nextBtn').style.background = '#6c757d';
+                document.getElementById('nextBtn').style.transform = 'scale(1)';
             }
         }
 
         function nextRow() {
-            if (test) {
-                test.nextRow();
-            }
+            recordCurrentRow();
+            currentRow++;
+            showCurrentRow();
         }
 
         function skipRow() {
-            if (test) {
-                test.skipRow();
+            recordCurrentRow(true);
+            currentRow++;
+            showCurrentRow();
+        }
+
+        function recordCurrentRow(skipped = false) {
+            const inputs = document.querySelectorAll('.letter-input');
+            const sequence = letterSequences[selectedLanguage][currentRow];
+            let correct = 0;
+
+            const responses = Array.from(inputs).map((input, index) => {
+                const userInput = input.value.toUpperCase();
+                const correctLetter = input.dataset.correct;
+                const isCorrect = userInput === correctLetter && !skipped;
+
+                if (isCorrect) correct++;
+
+                return {
+                    position: index,
+                    userInput: userInput,
+                    correctLetter: correctLetter,
+                    correct: isCorrect,
+                    skipped: skipped
+                };
+            });
+
+            results.responses.push({
+                row: currentRow + 1,
+                contrast: sequence.contrast,
+                letters: sequence.letters,
+                responses: responses,
+                correct: correct,
+                total: inputs.length,
+                accuracy: (correct / inputs.length) * 100,
+                skipped: skipped,
+                timestamp: new Date()
+            });
+
+            results.correct += correct;
+            results.total += inputs.length;
+            results.contrastLevels.push(sequence.contrast);
+        }
+
+        function completeTest() {
+            document.getElementById('testContent').style.display = 'none';
+            document.getElementById('testComplete').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'none';
+            document.getElementById('skipBtn').style.display = 'none';
+            document.getElementById('endBtn').style.display = 'none';
+
+            // Calculate final results
+            const accuracy = results.total > 0 ? (results.correct / results.total) * 100 : 0;
+            const contrastSensitivity = calculateContrastSensitivity();
+
+            document.getElementById('finalScore').textContent = accuracy.toFixed(1) + '%';
+            document.getElementById('contrastResult').textContent = contrastSensitivity.toFixed(2) + ' log units';
+            document.getElementById('totalCorrect').textContent = results.correct;
+            document.getElementById('totalLetters').textContent = results.total;
+
+            // Update progress to 100%
+            document.getElementById('progressBar').style.width = '100%';
+        }
+
+        function calculateContrastSensitivity() {
+            // Find the lowest contrast level where patient got at least 3/5 letters correct
+            let threshold = 0;
+
+            for (let i = results.responses.length - 1; i >= 0; i--) {
+                const response = results.responses[i];
+                if (response.correct >= 3 && !response.skipped) {
+                    threshold = response.contrast;
+                    break;
+                }
+            }
+
+            // Convert to log units (simplified calculation)
+            return threshold > 0 ? Math.log10(100 / threshold) : 0;
+        }
+
+        function endTest() {
+            if (confirm('Are you sure you want to end the test early?')) {
+                completeTest();
             }
         }
 
-        function clearInputs() {
-            if (test) {
-                test.clearInputs();
+        function saveResults() {
+            const endTime = new Date();
+            const duration = Math.round((endTime - startTime) / 1000);
+
+            const testData = {
+                patient_name: patientName,
+                test_name: 'pelli_robson',
+                language: selectedLanguage,
+                duration: duration,
+                start_time: startTime.toISOString(),
+                end_time: endTime.toISOString(),
+                total_points: results.total,
+                correct_points: results.correct,
+                accuracy: results.total > 0 ? (results.correct / results.total) * 100 : 0,
+                contrast_sensitivity: calculateContrastSensitivity(),
+                log_units: calculateContrastSensitivity(),
+                responses: results.responses,
+                contrast_levels: results.contrastLevels
+            };
+
+            // Save to main server
+            fetch('/api/save_test_result', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(testData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Test results saved successfully!');
+                    backToTests();
+                } else {
+                    alert('Error saving results: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving results:', error);
+                alert('Error saving results. Please try again.');
+            });
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+                document.querySelector('.fullscreen-btn').innerHTML = '<i class="fas fa-compress"></i>';
+            } else {
+                document.exitFullscreen();
+                document.querySelector('.fullscreen-btn').innerHTML = '<i class="fas fa-expand"></i>';
             }
         }
 
         function exitTest() {
-            if (confirm('Are you sure you want to exit this test?')) {
-                window.location.href = '/patient';
+            if (confirm('Are you sure you want to exit the test?')) {
+                backToTests();
             }
         }
 
+        function backToTests() {
+            window.location.href = '/patient';
+        }
+
+        // Handle escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 exitTest();
             }
         });
 
-        // Auto-show fullscreen button after page load
+        // Auto-focus and mobile optimization
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('start-test-fullscreen-btn').style.display = 'block';
+            // Enable fullscreen on mobile
+            if (window.innerWidth <= 768) {
+                setTimeout(() => {
+                    if (confirm('Enable fullscreen for better test experience?')) {
+                        toggleFullscreen();
+                    }
+                }, 1000);
+            }
         });
     </script>
 </body>

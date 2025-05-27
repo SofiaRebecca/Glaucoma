@@ -165,24 +165,28 @@ def handle_patient_identified(data):
     # Forward to doctor room
     socketio.emit('patient_identified', data, to=doctor_room)
 
-# Add test routes directly to main app
+# Add test routes that redirect to individual test apps
 @app.route('/test/<test_name>')
 def run_test(test_name):
-    """Route to individual test templates with optimized loading"""
-    # Template mapping for faster routing
-    test_templates = {
-        'visual_field': 'visual_field.html',
-        'csv1000': 'csv1000.html',
-        'edge': 'edge.html',
-        'motion': 'motion.html',
-        'pattern': 'pattern.html',
-        'pelli_robinson': 'pelli_robinson.html',
-        'sparcs': 'sparcs.html'
+    """Route to individual test apps for better isolation"""
+    # Port mapping for individual test apps
+    test_ports = {
+        'visual_field': 8001,
+        'csv1000': 8002,
+        'edge': 8003,
+        'motion': 8004,
+        'pattern': 8005,
+        'pelli_robinson': 8006,
+        'sparcs': 8007
     }
     
-    template = test_templates.get(test_name)
-    if template:
-        return render_template(template)
+    port = test_ports.get(test_name)
+    if port:
+        # Use the current host but redirect to the test-specific port
+        import urllib.parse
+        current_host = request.host.split(':')[0]
+        test_url = f"http://{current_host}:{port}/"
+        return redirect(test_url)
     else:
         return redirect(url_for('patient_view'))
 
