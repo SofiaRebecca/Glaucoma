@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -105,7 +106,6 @@
             background: rgba(220, 53, 69, 1);
         }
 
-        /* Mobile fullscreen button */
         #test-fullscreen-fab {
             position: fixed;
             bottom: 20px;
@@ -190,7 +190,6 @@
             Start Test
         </button>
 
-        <!-- Mobile fullscreen trigger -->
         <button id="start-test-fullscreen-btn" class="btn btn-info btn-lg" onclick="startTestFullscreen()" style="display:none">
             <i class="fas fa-expand me-2"></i>
             Start Test Fullscreen
@@ -248,7 +247,6 @@
             <i class="fas fa-times"></i> Exit
         </button>
 
-        <!-- Mobile fullscreen button -->
         <button id="test-fullscreen-fab" onclick="toggleTestFullscreen()" style="display:none">
             <i class="fas fa-expand"></i>
         </button>
@@ -266,11 +264,9 @@
                 this.currentLanguage = 'english';
                 this.rowStartTime = null;
 
-                // Pelli-Robson parameters
-                this.contrastLevels = [2.25, 2.10, 1.95, 1.80, 1.65, 1.50, 1.35, 1.20]; // log units
+                this.contrastLevels = [2.25, 2.10, 1.95, 1.80, 1.65, 1.50, 1.35, 1.20];
                 this.lettersPerRow = 6;
 
-                // Letter sets for both languages
                 this.letterSets = {
                     english: ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S', 'V', 'Z'],
                     kannada: ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಎ', 'ಏ', 'ಒ', 'ಓ']
@@ -283,13 +279,11 @@
             setLanguage(language) {
                 this.currentLanguage = language;
 
-                // Update button states
                 document.getElementById('english-btn').className = 
                     language === 'english' ? 'btn btn-primary' : 'btn btn-outline-primary';
                 document.getElementById('kannada-btn').className = 
                     language === 'kannada' ? 'btn btn-primary' : 'btn btn-outline-primary';
 
-                // Enable start button
                 document.getElementById('start-btn').disabled = false;
             }
 
@@ -298,17 +292,14 @@
 
                 this.currentLanguage = language;
 
-                // Update display
                 document.getElementById('current-language').textContent = 
                     language === 'english' ? 'English' : 'ಕನ್ನಡ';
 
-                // Update button states
                 document.getElementById('test-english-btn').className = 
                     language === 'english' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
                 document.getElementById('test-kannada-btn').className = 
                     language === 'kannada' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
 
-                // Regenerate current row with new language
                 this.showCurrentRow();
             }
 
@@ -325,28 +316,18 @@
                     return;
                 }
 
-                // Update display
                 document.getElementById('current-row').textContent = this.currentRow + 1;
                 document.getElementById('correct-count').textContent = this.correctCount;
 
                 const contrastLevel = this.contrastLevels[this.currentRow];
                 document.getElementById('contrast-level').textContent = contrastLevel.toFixed(2);
 
-                // Update sensitivity estimate
                 this.updateSensitivityEstimate(contrastLevel);
-
-                // Generate random letters for this row
                 this.generateRowLetters();
-
-                // Display letters with appropriate contrast
                 this.displayLetters(contrastLevel);
-
-                // Create input boxes
                 this.createInputBoxes();
 
                 this.rowStartTime = Date.now();
-
-                // Update progress
                 document.getElementById('row-progress').textContent = `${this.currentRow + 1}/${this.totalRows}`;
             }
 
@@ -354,7 +335,6 @@
                 const letterSet = this.letterSets[this.currentLanguage];
                 this.currentRowLetters = [];
 
-                // Ensure we have valid letters
                 if (!letterSet || letterSet.length === 0) {
                     console.error('No letter set available for language:', this.currentLanguage);
                     return;
@@ -365,33 +345,25 @@
                     const randomLetter = letterSet[randomIndex];
                     this.currentRowLetters.push(randomLetter);
                 }
-
-                console.log('Generated letters:', this.currentRowLetters);
             }
 
             displayLetters(contrastLevel) {
                 const letterDisplay = document.getElementById('letter-display');
 
-                // Ensure we have letters to display
                 if (!this.currentRowLetters || this.currentRowLetters.length === 0) {
-                    console.error('No letters to display');
                     this.generateRowLetters();
                     if (!this.currentRowLetters || this.currentRowLetters.length === 0) {
                         return;
                     }
                 }
 
-                // Calculate contrast ratio from log units
                 const contrastRatio = Math.pow(10, -contrastLevel);
                 const grayValue = Math.floor(255 * contrastRatio);
 
-                // Create letter display with proper spacing
                 const lettersText = this.currentRowLetters.join('   ');
                 letterDisplay.innerHTML = lettersText;
                 letterDisplay.style.color = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
                 letterDisplay.style.fontSize = '72px';
-
-                console.log('Displaying letters:', lettersText, 'with gray value:', grayValue);
             }
 
             createInputBoxes() {
@@ -405,14 +377,12 @@
                     input.maxLength = 1;
                     input.id = `input-${i}`;
 
-                    // Auto-advance to next input
                     input.addEventListener('input', (e) => {
                         if (e.target.value && i < this.lettersPerRow - 1) {
                             document.getElementById(`input-${i + 1}`).focus();
                         }
                     });
 
-                    // Handle backspace
                     input.addEventListener('keydown', (e) => {
                         if (e.key === 'Backspace' && !e.target.value && i > 0) {
                             document.getElementById(`input-${i - 1}`).focus();
@@ -424,7 +394,6 @@
                     inputRow.appendChild(input);
                 }
 
-                // Focus first input
                 document.getElementById('input-0').focus();
             }
 
@@ -432,7 +401,6 @@
                 const userInputs = this.getUserInputs();
                 const responseTime = Date.now() - this.rowStartTime;
 
-                // Calculate accuracy for this row
                 let correctLetters = 0;
                 for (let i = 0; i < this.lettersPerRow; i++) {
                     if (userInputs[i] && this.currentRowLetters[i] && 
@@ -443,7 +411,6 @@
 
                 const rowAccuracy = correctLetters / this.lettersPerRow;
 
-                // Record response
                 this.responses.push({
                     rowIndex: this.currentRow,
                     contrastLevel: this.contrastLevels[this.currentRow],
@@ -456,16 +423,13 @@
                     timestamp: new Date()
                 });
 
-                // Update total correct count
                 this.correctCount += correctLetters;
 
-                // Check if threshold reached (less than 3 letters correct)
                 if (correctLetters < 3) {
                     this.thresholdReached = true;
                     this.updateThresholdEstimate();
                 }
 
-                // Move to next row
                 this.currentRow++;
 
                 setTimeout(() => {
@@ -474,7 +438,6 @@
             }
 
             skipRow() {
-                // Record as all incorrect
                 const userInputs = new Array(this.lettersPerRow).fill('');
                 const responseTime = Date.now() - this.rowStartTime;
 
@@ -491,7 +454,6 @@
                     timestamp: new Date()
                 });
 
-                // Mark threshold reached
                 this.thresholdReached = true;
                 this.updateThresholdEstimate();
 
@@ -537,8 +499,7 @@
             }
 
             updateThresholdEstimate() {
-                // Calculate threshold based on last successful row
-                let thresholdLevel = 2.25; // Default high value
+                let thresholdLevel = 2.25;
 
                 for (let i = this.responses.length - 1; i >= 0; i--) {
                     if (this.responses[i].correctCount >= 3) {
@@ -554,11 +515,9 @@
                 const endTime = new Date();
                 const duration = Math.round((endTime - this.startTime) / 1000);
 
-                // Calculate final contrast sensitivity
-                let contrastSensitivity = 2.25; // Default starting value
+                let contrastSensitivity = 2.25;
                 let logUnits = 2.25;
 
-                // Find the lowest contrast level where at least 3 letters were read correctly
                 for (let i = this.responses.length - 1; i >= 0; i--) {
                     if (this.responses[i].correctCount >= 3) {
                         contrastSensitivity = this.responses[i].contrastLevel;
@@ -580,20 +539,29 @@
                     responses: this.responses
                 };
 
-                // Save results
                 this.saveResults(testData);
-
-                // Show results
                 this.showResults(testData);
             }
 
             saveResults(data) {
-                fetch('/api/save_result', {
+                fetch('/api/save_test_result', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        test_name: 'pelli_robinson',
+                        patient_name: data.patient_name,
+                        duration: data.duration,
+                        total_points: data.total_points,
+                        correct_points: data.correct_points,
+                        language: data.language,
+                        contrast_sensitivity: data.contrast_sensitivity,
+                        log_units: data.log_units,
+                        start_time: data.start_time,
+                        end_time: data.end_time,
+                        responses: data.responses
+                    })
                 })
                 .then(response => response.json())
                 .then(result => {
@@ -677,16 +645,6 @@
                 if (logUnits >= 1.4) return 'Significant Reduction';
                 return 'Severe Reduction';
             }
-
-            initializeTest() {
-                this.testContainer = document.getElementById('test-container');
-                this.generateLetterRows();
-
-                // Show fullscreen button on mobile
-                if (isMobileDevice()) {
-                    document.getElementById('start-test-fullscreen-btn').style.display = 'block';
-                }
-            }
         }
 
         let test = null;
@@ -707,7 +665,6 @@
         function startTest() {
             test = new PelliRobsonTest();
             test.start();
-            // Show mobile fullscreen button during test
             if (isMobileDevice()) {
                 document.getElementById('test-fullscreen-fab').style.display = 'block';
             }
@@ -727,7 +684,6 @@
             return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         }
 
-        // Auto-hide address bar on mobile load
         window.addEventListener('load', function() {
             if (isMobileDevice()) {
                 setTimeout(() => {
@@ -737,7 +693,6 @@
             }
         });
 
-        // Handle orientation change
         window.addEventListener('orientationchange', function() {
             if (isMobileDevice()) {
                 setTimeout(() => {
@@ -761,7 +716,6 @@
                     elem.msRequestFullscreen();
                 }
 
-                // For mobile devices, also hide address bar
                 if (isMobileDevice()) {
                     setTimeout(() => {
                         window.scrollTo(0, 1);
@@ -806,11 +760,10 @@
 
         function exitTest() {
             if (confirm('Are you sure you want to exit this test?')) {
-                window.location.href = 'http://' + window.location.hostname + ':5000/patient';
+                window.location.href = '/patient';
             }
         }
 
-        // Handle keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 exitTest();
