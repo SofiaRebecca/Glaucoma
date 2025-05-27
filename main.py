@@ -38,163 +38,67 @@ def patient_view():
 
 @app.route('/api/save_notes', methods=['POST'])
 def save_notes():
-    """Save doctor's notes to Excel"""
+    """Save doctor's notes"""
     try:
         data = request.get_json()
         patient_name = data.get('patient_name', 'Unknown')
-        notes = data.get('notes', '')
-        
-        excel_writer.save_doctor_notes(patient_name, notes)
-        return jsonify({'success': True, 'message': 'Notes saved successfully'})
+        notes_data = {
+            'symptoms': data.get('symptoms', ''),
+            'medical_concerns': data.get('medical_concerns', ''),
+            'additional_notes': data.get('additional_notes', '')
+        }
+
+        excel_writer.save_doctor_notes(patient_name, notes_data)
+        return jsonify({'status': 'success'})
     except Exception as e:
         logging.error(f"Error saving notes: {e}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/api/save_test_result', methods=['POST'])
-def save_test_result():
-    """Save test results from individual test modules"""
+@app.route('/api/save_result', methods=['POST'])
+def save_result():
+    """Save test results"""
     try:
-        logging.info("Received save_test_result request")
         data = request.get_json()
-        
-        if not data:
-            logging.error("No JSON data received")
-            return jsonify({'success': False, 'message': 'No data received'}), 400
-            
-        test_name = data.get('test_name', 'unknown')
-        patient_name = data.get('patient_name', 'Unknown')
-        
-        logging.info(f"Saving test result for {test_name} - Patient: {patient_name}")
-        logging.debug(f"Test data: {data}")
-        
-        # Save to Excel
-        excel_writer.save_test_result(test_name, patient_name, data)
-        
-        response = {'success': True, 'message': 'Test result saved successfully'}
-        logging.info("Test result saved successfully")
-        return jsonify(response)
-        
+
+        # Extract test information
+        test_name = data.get('test_name', 'visual_field')
+        patient_name = data.get('patient', {}).get('name', 'Unknown')
+
+        # Prepare test data for Excel
+        test_data = {
+            'start_time': data.get('startTime', ''),
+            'end_time': data.get('endTime', ''),
+            'duration': data.get('duration', 0),
+            'total_points': len(data.get('testResults', [])),
+            'correct_points': len([r for r in data.get('testResults', []) if r.get('seen', False)]),
+            'points_tested': len(data.get('testResults', [])),
+            'sensitivity_map': data.get('thresholds', []),
+            'defects_detected': len([t for t in data.get('thresholds', []) if t < 20]),
+            'false_positives': data.get('falsePositives', 0),
+            'false_negatives': data.get('falseNegatives', 0),
+            'fixation_losses': data.get('fixationLosses', 0),
+            'reliability_trials': data.get('reliabilityTrials', 0),
+            'doctor_notes': data.get('doctor_notes', '')
+        }
+
+        excel_writer.save_test_result(test_name, patient_name, test_data)
+        return jsonify({'status': 'success'})
     except Exception as e:
         logging.error(f"Error saving test result: {e}")
-        import traceback
-        logging.error(f"Full traceback: {traceback.format_exc()}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# WebSocket events for real-time communication
+# SocketIO event handlers for doctor-patient communication
 @socketio.on('join_doctor')
-def on_join_doctor():
+def handle_join_doctor():
+    """Doctor joins monitoring room"""
     join_room(doctor_room)
-    emit('status', {'msg': 'Doctor connected'})
-    logging.info("Doctor joined the room")
+    emit('status', {'message': 'Connected to doctor monitoring'})
 
 @socketio.on('join_patient')
-def on_join_patient():
+def handle_join_patient():
+    """Patient joins test room"""
     join_room(patient_room)
-    emit('status', {'msg': 'Patient connected'})
-    # Notify doctor that patient is online
-    socketio.emit('patient_status', {'online': True}, to=doctor_room)
-    logging.info("Patient joined the room")
-
-@socketio.on('disconnect')
-def on_disconnect():
-    # Notify doctor if patient disconnects
-    socketio.emit('patient_status', {'online': False}, to=doctor_room)
-    logging.info("Client disconnected")
-
-@socketio.on('doctor_command')
-def handle_doctor_command(data):
-    """Handle commands from doctor to patient"""
-    command = data.get('command')
-    test_name = data.get('test', '')
-    
-    logging.info(f"Doctor command: {command} for test: {test_name}")
-    
-    # Send command to patient
-    socketio.emit('doctor_instruction', {
-        'command': command,
-        'test': test_name
-    }, to=patient_room)
-    
-    # Confirm to doctor
-    emit('command_sent', {'command': command, 'test': test_name})
-
-@socketio.on('test_completed')
-def handle_test_completion(data):
-    """Handle test completion from patient"""
-    logging.info(f"Test completed: {data}")
-    
-    # Add timestamp if not present
-    if 'timestamp' not in data:
-        data['timestamp'] = int(time.time() * 1000)
-    
-    # Notify doctor about test completion
-    socketio.emit('test_result', data, to=doctor_room)
-    
-    # Also send as patient view update for real-time monitoring
-    socketio.emit('patient_view_update', {
-        'action': 'test_completed',
-        'test': data.get('test_name', 'unknown'),
-        'patient': data.get('patient_name', 'unknown'),
-        'accuracy': data.get('accuracy', 0),
-        'timestamp': data['timestamp']
-    }, to=doctor_room)
-
-@socketio.on('patient_view_update')
-def handle_patient_view_update(data):
-    """Handle patient view updates for doctor synchronization"""
-    logging.info(f"Patient view update: {data}")
-    
-    # Forward to doctor room with enhanced data
-    enhanced_data = {
-        **data,
-        'timestamp': data.get('timestamp', int(time.time() * 1000)),
-        'mirror_enabled': True
-    }
-    
-    socketio.emit('patient_view_update', enhanced_data, to=doctor_room)
-
-@socketio.on('enable_screen_mirror')
-def handle_screen_mirror(data):
-    """Handle screen mirroring requests from doctor"""
-    socketio.emit('mirror_screen', data, to=patient_room)
-
-@socketio.on('patient_screen_data')
-def handle_patient_screen_data(data):
-    """Handle patient screen data for doctor mirroring"""
-    socketio.emit('patient_screen_mirror', data, to=doctor_room)
-
-@socketio.on('patient_navigation')
-def handle_patient_navigation(data):
-    """Handle patient navigation for doctor monitoring"""
-    logging.info(f"Patient navigation: {data}")
-    
-    # Forward to doctor room
-    socketio.emit('patient_navigation', data, to=doctor_room)
-
-@socketio.on('patient_identified')
-def handle_patient_identified(data):
-    """Handle patient identification"""
-    logging.info(f"Patient identified: {data}")
-    
-    # Forward to doctor room
-    socketio.emit('patient_identified', data, to=doctor_room)
-
-@socketio.on('screen_capture_data')
-def handle_screen_capture(data):
-    """Handle screen capture data from patient for mirroring"""
-    # Forward screen data to doctor
-    socketio.emit('patient_screen_data', data, to=doctor_room)
-
-@socketio.on('doctor_control_command')
-def handle_doctor_control(data):
-    """Handle doctor control commands for patient screen"""
-    # Forward control commands to patient
-    socketio.emit('doctor_control', data, to=patient_room)
-
-@socketio.on('request_screen_share')
-def handle_screen_share_request(data):
-    """Handle doctor's request to start screen sharing"""
-    socketio.emit('start_screen_share', data, to=patient_room)
+    emit('status', {'message': 'Connected to patient interface'})
 
 @socketio.on('patient_mouse_move')
 def handle_patient_mouse_move(data):
@@ -209,7 +113,7 @@ def handle_patient_click(data):
 @socketio.on('patient_keyboard')
 def handle_patient_keyboard(data):
     """Handle patient keyboard events for mirroring"""
-    socketio.emit('patient_keyboard_data', data, to=doctor_room)
+    socketio.emit('patient_keyboard_data', data, to=patient_room)
 
 @socketio.on('doctor_remote_click')
 def handle_doctor_remote_click(data):
@@ -233,6 +137,43 @@ def handle_stop_screen_mirror(data):
     socketio.emit('stop_screen_capture', data, to=patient_room)
     socketio.emit('mirror_session_stopped', data, to=doctor_room)
 
+# Visual Field Test specific events
+@socketio.on('test_started')
+def handle_test_started(data):
+    """Handle test start notification"""
+    socketio.emit('test_status', {
+        'status': 'started',
+        'patient': data.get('patient'),
+        'testType': data.get('testType')
+    }, to=doctor_room)
+
+@socketio.on('stimulus_presented')
+def handle_stimulus_presented(data):
+    """Handle stimulus presentation notification"""
+    socketio.emit('stimulus_update', {
+        'pointIndex': data.get('pointIndex'),
+        'intensity': data.get('intensity'),
+        'position': data.get('position')
+    }, to=doctor_room)
+
+@socketio.on('response_recorded')
+def handle_response_recorded(data):
+    """Handle patient response notification"""
+    socketio.emit('response_update', {
+        'pointIndex': data.get('pointIndex'),
+        'seen': data.get('seen'),
+        'responseTime': data.get('responseTime'),
+        'currentThreshold': data.get('currentThreshold')
+    }, to=doctor_room)
+
+@socketio.on('test_completed')
+def handle_test_completed(data):
+    """Handle test completion notification"""
+    socketio.emit('test_finished', {
+        'status': 'completed',
+        'results': data
+    }, to=doctor_room)
+
 # Add test routes to serve tests directly from main app
 @app.route('/test/<test_name>')
 def run_test(test_name):
@@ -247,7 +188,7 @@ def run_test(test_name):
         'pelli_robinson': 'pelli_robinson.html',
         'sparcs': 'sparcs.html'
     }
-    
+
     template = test_templates.get(test_name)
     if template:
         return render_template(template)
@@ -257,6 +198,6 @@ def run_test(test_name):
 if __name__ == '__main__':
     # Start main application on port 5000 for Replit compatibility
     logging.info("Starting Glaucoma Detection System on port 5000...")
-    
+
     # Use SocketIO run for better mobile compatibility and WebSocket support
     socketio.run(app, host='0.0.0.0', port=5000, debug=True)

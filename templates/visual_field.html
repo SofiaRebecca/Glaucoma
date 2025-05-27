@@ -1,87 +1,42 @@
-
 <!DOCTYPE html>
-<html lang="en" data-bs-theme="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-fullscreen">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Humphrey Visual Field 24-2 Test</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="/static/style.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
     <style>
-        body {
-            background: #000;
-            color: white;
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             font-family: Arial, sans-serif;
-            touch-action: manipulation;
-        }
-
-        /* Instructions container with scrolling */
-        .instructions-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        .instructions {
-            max-width: 90vw;
-            max-height: 85vh;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            border: 2px solid #007bff;
-        }
-
-        .instructions::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .instructions::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-        }
-
-        .instructions::-webkit-scrollbar-thumb {
-            background: rgba(0, 123, 255, 0.6);
-            border-radius: 4px;
-        }
-
-        /* Test container */
-        .test-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            display: none;
-            background: #222;
+            background-color: #808080;
+            color: white;
             overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
         }
 
         .test-area {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100vw;
+            height: 100vh;
+            background-color: #808080;
+            position: relative;
+            cursor: none;
+            display: none;
         }
 
         .fixation-cross {
@@ -89,518 +44,441 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #ff0000;
-            font-size: 32px;
+            color: white;
+            font-size: 24px;
             font-weight: bold;
-            z-index: 10;
-            font-family: monospace;
+            z-index: 100;
         }
 
-        .test-point {
+        .stimulus {
             position: absolute;
-            width: 10px;
-            height: 10px;
-            background: white;
+            width: 20px;
+            height: 20px;
+            background-color: white;
             border-radius: 50%;
-            opacity: 0;
-            cursor: pointer;
-            transition: opacity 0.1s ease;
-            z-index: 5;
+            display: none;
+            z-index: 50;
         }
 
-        .test-point.visible {
-            opacity: 1;
-            animation: stimulus-flash 0.5s ease-in-out;
-        }
-
-        @keyframes stimulus-flash {
-            0% { opacity: 0; transform: scale(0.8); }
-            50% { opacity: 1; transform: scale(1.1); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        /* Test info overlay */
-        .test-info {
-            position: fixed;
-            top: 15px;
-            left: 15px;
+        .patient-form {
             background: rgba(0, 0, 0, 0.8);
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 100;
-            backdrop-filter: blur(5px);
-        }
-
-        /* Controls */
-        .exit-btn {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            background: rgba(220, 53, 69, 0.9);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 8px;
-            cursor: pointer;
-            z-index: 100;
-            font-size: 14px;
-        }
-
-        .fullscreen-btn {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0, 123, 255, 0.9);
-            color: white;
-            border: none;
-            padding: 15px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 100;
-            font-size: 20px;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .fullscreen-btn:hover {
-            background: rgba(0, 123, 255, 1);
-            transform: scale(1.05);
-        }
-
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .instructions {
-                padding: 20px;
-                max-width: 95vw;
-                max-height: 90vh;
-                font-size: 14px;
-            }
-
-            .test-info {
-                font-size: 12px;
-                padding: 8px 12px;
-                top: 10px;
-                left: 10px;
-            }
-
-            .exit-btn {
-                padding: 8px 12px;
-                font-size: 12px;
-                top: 10px;
-                right: 10px;
-            }
-
-            .fixation-cross {
-                font-size: 28px;
-            }
-
-            .test-point {
-                width: 12px;
-                height: 12px;
-                cursor: pointer;
-            }
-
-            .fullscreen-btn {
-                width: 56px;
-                height: 56px;
-                font-size: 18px;
-                bottom: 15px;
-                right: 15px;
-            }
-        }
-
-        /* Patient info modal */
-        .patient-info-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.95);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .patient-info-form {
-            background: #1a1a1a;
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 10px;
+            text-align: center;
             max-width: 400px;
             width: 90%;
-            text-align: center;
-            border: 2px solid #007bff;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            text-align: left;
         }
 
-        .form-control {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #444;
-            border-radius: 8px;
-            background: #333;
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
             color: white;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
             font-size: 16px;
         }
 
         .btn {
-            padding: 12px 24px;
+            background-color: #007bff;
+            color: white;
             border: none;
-            border-radius: 8px;
+            padding: 12px 24px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 16px;
-            transition: all 0.3s ease;
-            min-height: 48px;
-            touch-action: manipulation;
+            margin: 5px;
         }
-
-        .btn-primary { background: #007bff; color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-warning { background: #ffc107; color: black; }
-        .btn-danger { background: #dc3545; color: white; }
 
         .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            background-color: #0056b3;
         }
 
-        /* Force fullscreen styles */
-        body.fullscreen-active {
-            overflow: hidden !important;
-            height: 100vh !important;
-            width: 100vw !important;
+        .instructions {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            display: none;
         }
 
-        .fullscreen-active .test-container {
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            z-index: 999999 !important;
+        .progress-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 200;
+            display: none;
         }
 
-        /* Prevent scrolling during fullscreen test */
-        .test-active {
-            overflow: hidden !important;
-            position: fixed !important;
-            width: 100% !important;
-            height: 100% !important;
+        .results {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 800px;
+            width: 90%;
+            display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .reliability-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .reliability-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .reliability-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .reliability-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .alert {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        .good {
+            color: #51cf66;
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(9, 30px);
+            gap: 2px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .heatmap-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            border-radius: 3px;
+            color: white;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+        }
+
+        @media (max-width: 768px) {
+            .patient-form, .instructions, .results {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            .heatmap {
+                grid-template-columns: repeat(9, 25px);
+            }
+
+            .heatmap-cell {
+                width: 25px;
+                height: 25px;
+                font-size: 8px;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- Patient Information Modal -->
-    <div id="patient-info-modal" class="patient-info-modal">
-        <div class="patient-info-form">
-            <h3 class="mb-4">
-                <i class="fas fa-user me-2"></i>
-                Patient Information
-            </h3>
+    <div class="container">
+        <!-- Patient Information Form -->
+        <div class="patient-form" id="patientForm">
+            <h2>Patient Information</h2>
             <div class="form-group">
-                <label for="patient-name">Full Name:</label>
-                <input type="text" id="patient-name" class="form-control" placeholder="Enter patient name" required>
+                <label for="patientName">Patient Name:</label>
+                <input type="text" id="patientName" required>
             </div>
             <div class="form-group">
-                <label for="patient-age">Age:</label>
-                <input type="number" id="patient-age" class="form-control" placeholder="Enter age" min="1" max="120" required>
+                <label for="patientAge">Age:</label>
+                <input type="number" id="patientAge" min="1" max="120" required>
             </div>
             <div class="form-group">
-                <label for="patient-id">Patient ID:</label>
-                <input type="text" id="patient-id" class="form-control" placeholder="Enter patient ID" required>
+                <label for="patientId">Patient ID:</label>
+                <input type="text" id="patientId" required>
             </div>
-            <button class="btn btn-primary w-100" onclick="savePatientInfo()">
-                <i class="fas fa-check me-2"></i>
-                Continue to Test
-            </button>
+            <button class="btn" onclick="showInstructions()">Continue</button>
         </div>
-    </div>
 
-    <!-- Instructions -->
-    <div id="instructions" class="instructions-container">
-        <div class="instructions">
-            <h2 class="mb-4">
-                <i class="fas fa-eye me-2"></i>
-                Humphrey Visual Field 24-2 Test
-            </h2>
-            <div class="mb-4">
-                <p class="lead">This test evaluates your peripheral vision using the standard 24-2 grid pattern with 54 test points.</p>
-            </div>
-            
-            <div class="mb-4 text-start">
-                <h5><i class="fas fa-list-ul me-2"></i>Instructions:</h5>
-                <ul class="list-unstyled">
-                    <li class="mb-2"><i class="fas fa-crosshairs me-2 text-danger"></i>Keep your eyes focused on the red cross (+) in the center at all times</li>
-                    <li class="mb-2"><i class="fas fa-circle me-2 text-white"></i>Tap the screen when you see a white dot appear in your peripheral vision</li>
-                    <li class="mb-2"><i class="fas fa-clock me-2 text-info"></i>You have 500ms to respond when a stimulus appears</li>
-                    <li class="mb-2"><i class="fas fa-eye-slash me-2 text-warning"></i>Do NOT move your eyes away from the center cross</li>
-                    <li class="mb-2"><i class="fas fa-mobile-alt me-2 text-success"></i>Tap anywhere on screen when you see a stimulus</li>
+        <!-- Test Instructions -->
+        <div class="instructions" id="instructions">
+            <h2>Visual Field Test Instructions</h2>
+            <div style="text-align: left; margin: 20px 0;">
+                <p><strong>Instructions:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>Look at the white cross in the center of the screen at all times</li>
+                    <li>Tap anywhere on the screen when you see a white dot appear</li>
+                    <li>Respond as quickly as possible when you see the dot</li>
+                    <li>Do NOT move your eyes away from the center cross</li>
+                    <li>The test will take about 6-8 minutes</li>
+                    <li>Sometimes no dot will appear - this is normal</li>
                 </ul>
             </div>
+            <button class="btn" onclick="startTest()">Start Test</button>
+        </div>
 
-            <div class="mb-4 alert alert-info">
-                <h6><i class="fas fa-info-circle me-2"></i>Test Features:</h6>
-                <ul class="list-unstyled mb-0">
-                    <li><i class="fas fa-check me-2"></i>4-2 Staircase methodology for threshold detection</li>
-                    <li><i class="fas fa-check me-2"></i>Goldmann Size III stimuli (0.43° diameter)</li>
-                    <li><i class="fas fa-check me-2"></i>Automatic reliability testing (False Positives/Negatives)</li>
-                    <li><i class="fas fa-check me-2"></i>Real-time progress tracking</li>
-                </ul>
+        <!-- Test Area -->
+        <div class="test-area" id="testArea">
+            <div class="fixation-cross" id="fixationCross">+</div>
+            <div class="stimulus" id="stimulus"></div>
+            <div class="progress-info" id="progressInfo">
+                <div>Point: <span id="currentPoint">1</span> / 54</div>
+                <div>Progress: <span id="progressPercent">0</span>%</div>
             </div>
+        </div>
 
-            <div class="mb-4 alert alert-warning">
-                <h6><i class="fas fa-mobile-alt me-2"></i>Mobile Instructions:</h6>
-                <p class="mb-2">For best results on mobile devices:</p>
-                <ul class="list-unstyled mb-0">
-                    <li><i class="fas fa-expand me-2"></i>Enable fullscreen mode when prompted</li>
-                    <li><i class="fas fa-rotate me-2"></i>Use landscape orientation if possible</li>
-                    <li><i class="fas fa-volume-mute me-2"></i>Silence notifications during test</li>
-                </ul>
+        <!-- Results -->
+        <div class="results" id="results">
+            <h2>Visual Field Test Results</h2>
+            <div class="reliability-grid">
+                <div class="reliability-item">
+                    <div class="reliability-value" id="fpPercent">0%</div>
+                    <div class="reliability-label">False Positives</div>
+                </div>
+                <div class="reliability-item">
+                    <div class="reliability-value" id="fnPercent">0%</div>
+                    <div class="reliability-label">False Negatives</div>
+                </div>
+                <div class="reliability-item">
+                    <div class="reliability-value" id="flPercent">0%</div>
+                    <div class="reliability-label">Fixation Losses</div>
+                </div>
             </div>
-
-            <button class="btn btn-primary btn-lg w-100 mb-3" onclick="startFullscreenTest()">
-                <i class="fas fa-expand me-2"></i>
-                Start Test (Fullscreen)
-            </button>
-            <button class="btn btn-warning" onclick="startTest()">
-                <i class="fas fa-play me-2"></i>
-                Start Without Fullscreen
-            </button>
+            <div id="reliabilityAlerts"></div>
+            <h3>Sensitivity Map</h3>
+            <div class="heatmap" id="heatmap"></div>
+            <div style="margin-top: 20px;">
+                <div><strong>Mean Deviation (MD):</strong> <span id="meanDeviation">0.0</span> dB</div>
+                <div><strong>Pattern Standard Deviation (PSD):</strong> <span id="patternSD">0.0</span> dB</div>
+            </div>
+            <button class="btn" onclick="restartTest()" style="margin-top: 20px;">New Test</button>
         </div>
-    </div>
-
-    <!-- Test Container -->
-    <div id="test-container" class="test-container">
-        <div class="test-area">
-            <div class="fixation-cross">+</div>
-        </div>
-
-        <div class="test-info">
-            <div>Point: <span id="current-point">0</span> / 54</div>
-            <div>Seen: <span id="points-seen">0</span></div>
-            <div>Progress: <span id="progress-percent">0%</span></div>
-            <div>Intensity: <span id="current-intensity">24 dB</span></div>
-        </div>
-
-        <button class="exit-btn" onclick="exitTest()">
-            <i class="fas fa-times"></i> Exit
-        </button>
-
-        <button class="fullscreen-btn" id="fullscreen-btn" onclick="toggleFullscreen()">
-            <i class="fas fa-expand"></i>
-        </button>
     </div>
 
     <script>
-        class HumphreyVisualFieldTest {
+        class VisualFieldTest {
             constructor() {
-                this.patientName = '';
-                this.patientAge = '';
-                this.patientId = '';
-                this.startTime = null;
-                this.currentPoint = 0;
-                this.totalPoints = 54;
-                this.pointsSeen = 0;
-                this.responses = [];
-                this.testActive = false;
-                this.currentStimulus = null;
+                this.socket = io();
+                this.testPoints = this.generate24_2Grid();
+                this.currentPointIndex = 0;
+                this.testResults = [];
+                this.reliabilityTests = [];
+                this.testStartTime = null;
                 this.stimulusStartTime = null;
                 this.stimulusActive = false;
                 this.responseReceived = false;
-                this.isFullscreen = false;
-                this.socket = null;
+                this.thresholds = new Array(54).fill(24); // Start at 24 dB
+                this.reversals = new Array(54).fill(0);
+                this.staircase = new Array(54).fill('coarse'); // 'coarse' or 'fine'
+                this.testComplete = new Array(54).fill(false);
+                this.isTestRunning = false;
+                this.patientData = {};
 
-                // 4-2 Staircase parameters
-                this.dbLevels = [6, 12, 18, 24, 30, 36]; // dB levels
-                this.pointThresholds = new Array(54).fill(3); // Start at 24 dB
-                this.reversalCounts = new Array(54).fill(0);
-                this.lastResponse = new Array(54).fill(null);
-
-                // Reliability testing
+                // Reliability tracking
                 this.falsePositives = 0;
                 this.falseNegatives = 0;
                 this.fixationLosses = 0;
-                this.reliabilityTests = 0;
+                this.reliabilityTrials = 0;
 
-                this.testPoints = this.generateTestPoints();
-                this.setupSocketConnection();
+                this.setupEventListeners();
             }
 
-            setupSocketConnection() {
-                this.socket = io();
-                this.socket.on('connect', () => {
-                    console.log('Connected to server for live monitoring');
-                });
-            }
+            generate24_2Grid() {
+                // Standard 24-2 grid points (54 points, excluding blind spot)
+                const points = [
+                    // Central 4 points
+                    {x: -3, y: 3}, {x: 3, y: 3}, {x: -3, y: -3}, {x: 3, y: -3},
 
-            generateTestPoints() {
-                const points = [];
-                const centerX = window.innerWidth / 2;
-                const centerY = window.innerHeight / 2;
-                const gridSpacing = Math.min(window.innerWidth, window.innerHeight) * 0.06;
+                    // Inner ring (8 points)
+                    {x: -9, y: 9}, {x: 0, y: 9}, {x: 9, y: 9},
+                    {x: -9, y: 3}, {x: 9, y: 3},
+                    {x: -9, y: -3}, {x: 9, y: -3},
+                    {x: -9, y: -9}, {x: 0, y: -9}, {x: 9, y: -9},
 
-                // Standard 24-2 pattern coordinates (in degrees)
-                const pattern24_2 = [
-                    // Central points
-                    [0, 0], [-3, 0], [3, 0], [0, -3], [0, 3],
-                    [-6, 0], [6, 0], [0, -6], [0, 6],
-                    [-3, -3], [3, -3], [-3, 3], [3, 3],
-                    [-6, -3], [6, -3], [-6, 3], [6, 3],
-                    [-3, -6], [3, -6], [-3, 6], [3, 6],
-                    
-                    // Intermediate ring
-                    [-9, 0], [9, 0], [0, -9], [0, 9],
-                    [-9, -3], [9, -3], [-9, 3], [9, 3],
-                    [-6, -6], [6, -6], [-6, 6], [6, 6],
-                    [-3, -9], [3, -9], [-3, 9], [3, 9],
-                    
-                    // Outer ring
-                    [-12, 0], [12, 0], [0, -12], [0, 12],
-                    [-15, 0], [15, 0], [0, -15], [0, 15],
-                    [-12, -3], [12, -3], [-12, 3], [12, 3],
-                    [-9, -6], [9, -6], [-9, 6], [9, 6],
-                    [-6, -9], [6, -9], [-6, 9], [6, 9],
-                    [-3, -12], [3, -12], [-3, 12], [3, 12]
+                    // Middle ring (16 points)
+                    {x: -15, y: 15}, {x: -9, y: 15}, {x: -3, y: 15}, {x: 3, y: 15}, {x: 9, y: 15}, {x: 15, y: 15},
+                    {x: -15, y: 9}, {x: 15, y: 9},
+                    {x: -15, y: 0}, {x: 15, y: 0},
+                    {x: -15, y: -9}, {x: 15, y: -9},
+                    {x: -15, y: -15}, {x: -9, y: -15}, {x: -3, y: -15}, {x: 3, y: -15}, {x: 9, y: -15}, {x: 15, y: -15},
+
+                    // Outer ring (22 points)
+                    {x: -21, y: 21}, {x: -15, y: 21}, {x: -9, y: 21}, {x: -3, y: 21}, {x: 3, y: 21}, {x: 9, y: 21}, {x: 15, y: 21}, {x: 21, y: 21},
+                    {x: -21, y: 15}, {x: 21, y: 15},
+                    {x: -21, y: 9}, {x: 21, y: 9},
+                    {x: -21, y: 3}, {x: 21, y: 3},
+                    {x: -21, y: -3}, {x: 21, y: -3},
+                    {x: -21, y: -9}, {x: 21, y: -9},
+                    {x: -21, y: -15}, {x: 21, y: -15},
+                    {x: -21, y: -21}, {x: -15, y: -21}, {x: -9, y: -21}, {x: -3, y: -21}, {x: 3, y: -21}, {x: 9, y: -21}, {x: 15, y: -21}, {x: 21, y: -21}
                 ];
 
                 // Convert to screen coordinates
-                pattern24_2.forEach((coord, index) => {
-                    if (index < 54) {
-                        points.push({
-                            id: index,
-                            x: centerX + (coord[0] * gridSpacing),
-                            y: centerY + (coord[1] * gridSpacing),
-                            degreeX: coord[0],
-                            degreeY: coord[1],
-                            threshold: this.pointThresholds[index]
-                        });
+                return points.slice(0, 54).map((point, index) => ({
+                    id: index,
+                    x: point.x,
+                    y: point.y,
+                    screenX: window.innerWidth / 2 + (point.x * 15), // Scale factor
+                    screenY: window.innerHeight / 2 - (point.y * 15) // Invert Y for screen coords
+                }));
+            }
+
+            setupEventListeners() {
+                document.addEventListener('click', (e) => this.handleGlobalClick(e));
+                document.addEventListener('touchstart', (e) => this.handleGlobalClick(e));
+
+                // Prevent default touch behaviors
+                document.addEventListener('touchmove', (e) => e.preventDefault(), {passive: false});
+                document.addEventListener('touchend', (e) => e.preventDefault(), {passive: false});
+
+                // Socket events for doctor monitoring
+                this.socket.on('connect', () => {
+                    console.log('Connected to server');
+                });
+            }
+
+            async startTest() {
+                // Enter fullscreen
+                try {
+                    if (document.documentElement.requestFullscreen) {
+                        await document.documentElement.requestFullscreen();
+                    } else if (document.documentElement.webkitRequestFullscreen) {
+                        await document.documentElement.webkitRequestFullscreen();
+                    } else if (document.documentElement.msRequestFullscreen) {
+                        await document.documentElement.msRequestFullscreen();
                     }
+                } catch (e) {
+                    console.log('Fullscreen not supported');
+                }
+
+                // Get patient data
+                this.patientData = {
+                    name: document.getElementById('patientName').value,
+                    age: document.getElementById('patientAge').value,
+                    id: document.getElementById('patientId').value
+                };
+
+                // Hide instructions and show test area
+                document.getElementById('instructions').style.display = 'none';
+                document.getElementById('testArea').style.display = 'block';
+                document.getElementById('progressInfo').style.display = 'block';
+
+                this.isTestRunning = true;
+                this.testStartTime = Date.now();
+                this.currentPointIndex = 0;
+
+                // Notify doctor
+                this.socket.emit('test_started', {
+                    patient: this.patientData,
+                    testType: 'visual_field_24_2'
                 });
 
-                return points;
+                setTimeout(() => this.presentNextStimulus(), 2000);
             }
 
-            start() {
-                document.getElementById('instructions').style.display = 'none';
-                document.getElementById('test-container').style.display = 'block';
-                document.body.classList.add('test-active');
-                
-                this.startTime = new Date();
-                this.testActive = true;
+            presentNextStimulus() {
+                if (!this.isTestRunning) return;
 
-                // Ensure fullscreen persists
-                this.maintainFullscreen();
-
-                // Start test with random point
-                this.nextPoint();
-
-                // Notify doctor via socket
-                if (this.socket) {
-                    this.socket.emit('test_started', {
-                        test: 'visual_field',
-                        patient: this.patientName,
-                        timestamp: Date.now()
-                    });
-                }
-            }
-
-            maintainFullscreen() {
-                if (this.isFullscreen) {
-                    // Continuously check and maintain fullscreen during test
-                    const checkFullscreen = () => {
-                        if (!document.fullscreenElement && this.testActive) {
-                            this.requestFullscreen();
-                        }
-                        if (this.testActive) {
-                            setTimeout(checkFullscreen, 1000);
-                        }
-                    };
-                    checkFullscreen();
-                }
-            }
-
-            requestFullscreen() {
-                const elem = document.documentElement;
-                if (elem.requestFullscreen) {
-                    elem.requestFullscreen().catch(err => console.log('Fullscreen error:', err));
-                } else if (elem.webkitRequestFullscreen) {
-                    elem.webkitRequestFullscreen();
-                } else if (elem.mozRequestFullScreen) {
-                    elem.mozRequestFullScreen();
-                } else if (elem.msRequestFullscreen) {
-                    elem.msRequestFullscreen();
-                }
-                
-                document.body.classList.add('fullscreen-active');
-                this.updateFullscreenButton(true);
-            }
-
-            updateFullscreenButton(isFullscreen) {
-                const btn = document.getElementById('fullscreen-btn');
-                if (btn) {
-                    btn.innerHTML = isFullscreen ? 
-                        '<i class="fas fa-compress"></i>' : 
-                        '<i class="fas fa-expand"></i>';
-                }
-            }
-
-            nextPoint() {
-                if (this.currentPoint >= this.totalPoints || !this.testActive) {
+                // Check if all points are complete
+                if (this.testComplete.every(complete => complete)) {
                     this.completeTest();
                     return;
                 }
 
-                // Update display
-                this.updateDisplay();
+                // Find next point to test
+                let pointToTest = this.findNextPoint();
 
-                // Add random delay between points (800-2000ms)
-                const delay = 800 + Math.random() * 1200;
-
-                // Notify doctor about current point
-                if (this.socket) {
-                    this.socket.emit('point_testing', {
-                        pointIndex: this.currentPoint,
-                        position: this.testPoints[this.currentPoint],
-                        dbLevel: this.dbLevels[this.pointThresholds[this.currentPoint]],
-                        patient: this.patientName
-                    });
+                if (pointToTest === -1) {
+                    this.completeTest();
+                    return;
                 }
 
+                this.currentPointIndex = pointToTest;
+
+                // 10% chance for reliability test
+                if (Math.random() < 0.1) {
+                    this.performReliabilityTest();
+                    return;
+                }
+
+                this.updateProgress();
+
+                // Inter-stimulus interval (1-3 seconds)
+                const delay = 1000 + Math.random() * 2000;
+
                 setTimeout(() => {
-                    this.showStimulus();
+                    this.showStimulus(pointToTest);
                 }, delay);
             }
 
-            showStimulus() {
-                if (!this.testActive) return;
+            findNextPoint() {
+                // Find points that aren't complete yet
+                for (let i = 0; i < this.testComplete.length; i++) {
+                    if (!this.testComplete[i]) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
 
-                const point = this.testPoints[this.currentPoint];
-                const intensity = this.calculateIntensity(this.pointThresholds[this.currentPoint]);
+            showStimulus(pointIndex) {
+                if (!this.isTestRunning) return;
 
-                // Create stimulus
-                this.currentStimulus = document.createElement('div');
-                this.currentStimulus.className = 'test-point visible';
-                this.currentStimulus.style.left = point.x + 'px';
-                this.currentStimulus.style.top = point.y + 'px';
-                this.currentStimulus.style.opacity = intensity;
+                const point = this.testPoints[pointIndex];
+                const stimulus = document.getElementById('stimulus');
 
-                this.stimulusStartTime = Date.now();
+                // Calculate intensity based on threshold
+                const intensity = this.calculateIntensity(pointIndex);
+                const opacity = Math.max(0.1, Math.min(1.0, intensity / 40)); // Convert dB to opacity
+
+                stimulus.style.left = point.screenX - 10 + 'px';
+                stimulus.style.top = point.screenY - 10 + 'px';
+                stimulus.style.opacity = opacity;
+                stimulus.style.display = 'block';
+
                 this.stimulusActive = true;
                 this.responseReceived = false;
+                this.stimulusStartTime = Date.now();
 
-                document.querySelector('.test-area').appendChild(this.currentStimulus);
+                // Notify doctor
+                this.socket.emit('stimulus_presented', {
+                    pointIndex: pointIndex,
+                    intensity: this.thresholds[pointIndex],
+                    position: point
+                });
 
-                // Auto-hide stimulus after 500ms
+                // Hide stimulus after 500ms
                 setTimeout(() => {
+                    stimulus.style.display = 'none';
                     if (this.stimulusActive && !this.responseReceived) {
                         this.handleResponse(false);
                     }
@@ -614,13 +492,11 @@
                 }, 1500);
             }
 
-            calculateIntensity(thresholdIndex) {
-                // Convert dB to opacity (0.1 to 1.0)
-                const dbValue = this.dbLevels[thresholdIndex];
-                return Math.max(0.1, Math.min(1.0, dbValue / 36));
+            calculateIntensity(pointIndex) {
+                return this.thresholds[pointIndex];
             }
 
-            handleGlobalClick() {
+            handleGlobalClick(e) {
                 if (!this.responseReceived && this.stimulusStartTime) {
                     const responseTime = Date.now() - this.stimulusStartTime;
                     // Accept any click within 1500ms of stimulus appearing as "seen"
@@ -631,428 +507,338 @@
             }
 
             handleResponse(seen) {
-                if (!this.stimulusActive || this.responseReceived) return;
+                if (this.responseReceived) return;
 
                 this.responseReceived = true;
                 this.stimulusActive = false;
 
-                const responseTime = Date.now() - this.stimulusStartTime;
-                const point = this.testPoints[this.currentPoint];
-                const currentThreshold = this.pointThresholds[this.currentPoint];
-
-                // Record response
-                this.responses.push({
-                    pointId: point.id,
-                    x: point.x,
-                    y: point.y,
-                    degreeX: point.degreeX,
-                    degreeY: point.degreeY,
-                    dbLevel: this.dbLevels[currentThreshold],
-                    seen: seen,
-                    responseTime: responseTime,
-                    timestamp: new Date().toISOString()
-                });
-
-                // Update count
-                if (seen) {
-                    this.pointsSeen++;
-                }
+                const responseTime = this.stimulusStartTime ? Date.now() - this.stimulusStartTime : 0;
+                const pointIndex = this.currentPointIndex;
 
                 // Apply 4-2 staircase logic
-                this.updateThreshold(this.currentPoint, seen);
+                this.applyStaircaseLogic(pointIndex, seen);
+
+                // Record result
+                this.testResults.push({
+                    pointIndex: pointIndex,
+                    x: this.testPoints[pointIndex].x,
+                    y: this.testPoints[pointIndex].y,
+                    intensity: this.thresholds[pointIndex],
+                    seen: seen,
+                    responseTime: responseTime,
+                    timestamp: Date.now()
+                });
 
                 // Notify doctor
-                if (this.socket) {
-                    this.socket.emit('patient_response', {
-                        pointIndex: this.currentPoint,
-                        seen: seen,
-                        responseTime: responseTime,
-                        dbLevel: this.dbLevels[currentThreshold],
-                        patient: this.patientName
-                    });
-                }
+                this.socket.emit('response_recorded', {
+                    pointIndex: pointIndex,
+                    seen: seen,
+                    responseTime: responseTime,
+                    currentThreshold: this.thresholds[pointIndex]
+                });
 
-                // Remove stimulus
-                if (this.currentStimulus && this.currentStimulus.parentNode) {
-                    this.currentStimulus.remove();
-                    this.currentStimulus = null;
-                }
-
-                this.currentPoint++;
-
-                // Brief pause before next point
-                setTimeout(() => {
-                    this.nextPoint();
-                }, 300);
+                // Continue with next stimulus
+                setTimeout(() => this.presentNextStimulus(), 500);
             }
 
-            updateThreshold(pointIndex, seen) {
-                const currentThreshold = this.pointThresholds[pointIndex];
-                const lastResp = this.lastResponse[pointIndex];
+            applyStaircaseLogic(pointIndex, seen) {
+                const stepSize = this.staircase[pointIndex] === 'coarse' ? 4 : 2;
 
-                // 4-2 Staircase logic
-                if (this.reversalCounts[pointIndex] < 2) {
-                    // First phase: 4 dB steps
-                    if (seen) {
-                        this.pointThresholds[pointIndex] = Math.max(0, currentThreshold - 1);
-                    } else {
-                        this.pointThresholds[pointIndex] = Math.min(this.dbLevels.length - 1, currentThreshold + 1);
-                    }
+                if (seen) {
+                    // Decrease intensity (make dimmer)
+                    this.thresholds[pointIndex] -= stepSize;
                 } else {
-                    // Second phase: 2 dB steps
-                    if (seen) {
-                        this.pointThresholds[pointIndex] = Math.max(0, currentThreshold - 1);
-                    } else {
-                        this.pointThresholds[pointIndex] = Math.min(this.dbLevels.length - 1, currentThreshold + 1);
+                    // Increase intensity (make brighter)
+                    this.thresholds[pointIndex] += stepSize;
+                    this.reversals[pointIndex]++;
+
+                    // Switch to fine staircase after first reversal
+                    if (this.reversals[pointIndex] >= 1 && this.staircase[pointIndex] === 'coarse') {
+                        this.staircase[pointIndex] = 'fine';
                     }
                 }
 
-                // Check for reversal
-                if (lastResp !== null && lastResp !== seen) {
-                    this.reversalCounts[pointIndex]++;
-                }
+                // Clamp values
+                this.thresholds[pointIndex] = Math.max(0, Math.min(40, this.thresholds[pointIndex]));
 
-                this.lastResponse[pointIndex] = seen;
+                // Mark as complete after 4 reversals or if too many presentations
+                const presentations = this.testResults.filter(r => r.pointIndex === pointIndex).length;
+                if (this.reversals[pointIndex] >= 4 || presentations >= 8) {
+                    this.testComplete[pointIndex] = true;
+                }
             }
 
-            updateDisplay() {
-                document.getElementById('current-point').textContent = this.currentPoint + 1;
-                document.getElementById('points-seen').textContent = this.pointsSeen;
-                document.getElementById('progress-percent').textContent = 
-                    Math.round((this.currentPoint / this.totalPoints) * 100) + '%';
-                
-                if (this.currentPoint < this.totalPoints) {
-                    const currentDb = this.dbLevels[this.pointThresholds[this.currentPoint]];
-                    document.getElementById('current-intensity').textContent = currentDb + ' dB';
+            performReliabilityTest() {
+                this.reliabilityTrials++;
+
+                const testType = Math.random();
+
+                if (testType < 0.33) {
+                    // False positive test (no stimulus)
+                    this.performFalsePositiveTest();
+                } else if (testType < 0.66) {
+                    // False negative test (bright stimulus at known seen location)
+                    this.performFalseNegativeTest();
+                } else {
+                    // Fixation loss test (blind spot)
+                    this.performFixationLossTest();
                 }
+            }
+
+            performFalsePositiveTest() {
+                this.stimulusActive = true;
+                this.responseReceived = false;
+                this.stimulusStartTime = Date.now();
+
+                // No stimulus shown, just wait for response
+                setTimeout(() => {
+                    if (!this.responseReceived) {
+                        // No response = good
+                        this.reliabilityTests.push({type: 'FP', correct: true});
+                    } else {
+                        // Response = false positive
+                        this.falsePositives++;
+                        this.reliabilityTests.push({type: 'FP', correct: false});
+                    }
+                    setTimeout(() => this.presentNextStimulus(), 500);
+                }, 1500);
+            }
+
+            performFalseNegativeTest() {
+                // Find a point that was previously seen
+                const seenPoints = this.testResults.filter(r => r.seen).map(r => r.pointIndex);
+                if (seenPoints.length === 0) {
+                    this.presentNextStimulus();
+                    return;
+                }
+
+                const pointIndex = seenPoints[Math.floor(Math.random() * seenPoints.length)];
+                const point = this.testPoints[pointIndex];
+                const stimulus = document.getElementById('stimulus');
+
+                // Show bright stimulus (10 dB brighter than threshold)
+                stimulus.style.left = point.screenX - 10 + 'px';
+                stimulus.style.top = point.screenY - 10 + 'px';
+                stimulus.style.opacity = 1.0; // Bright stimulus
+                stimulus.style.display = 'block';
+
+                this.stimulusActive = true;
+                this.responseReceived = false;
+                this.stimulusStartTime = Date.now();
+
+                setTimeout(() => {
+                    stimulus.style.display = 'none';
+                    if (!this.responseReceived) {
+                        // No response to bright stimulus = false negative
+                        this.falseNegatives++;
+                        this.reliabilityTests.push({type: 'FN', correct: false});
+                    } else {
+                        // Response = good
+                        this.reliabilityTests.push({type: 'FN', correct: true});
+                    }
+                    setTimeout(() => this.presentNextStimulus(), 500);
+                }, 500);
+            }
+
+            performFixationLossTest() {
+                // Test at blind spot location (15° temporal, 3° below fixation)
+                const blindSpotX = window.innerWidth / 2 + (15 * 15);
+                const blindSpotY = window.innerHeight / 2 + (3 * 15);
+
+                const stimulus = document.getElementById('stimulus');
+                stimulus.style.left = blindSpotX - 10 + 'px';
+                stimulus.style.top = blindSpotY - 10 + 'px';
+                stimulus.style.opacity = 1.0;
+                stimulus.style.display = 'block';
+
+                this.stimulusActive = true;
+                this.responseReceived = false;
+                this.stimulusStartTime = Date.now();
+
+                setTimeout(() => {
+                    stimulus.style.display = 'none';
+                    if (this.responseReceived) {
+                        // Response at blind spot = fixation loss
+                        this.fixationLosses++;
+                        this.reliabilityTests.push({type: 'FL', correct: false});
+                    } else {
+                        // No response = good fixation
+                        this.reliabilityTests.push({type: 'FL', correct: true});
+                    }
+                    setTimeout(() => this.presentNextStimulus(), 500);
+                }, 500);
+            }
+
+            updateProgress() {
+                const completedPoints = this.testComplete.filter(c => c).length;
+                const progress = Math.round((completedPoints / 54) * 100);
+
+                document.getElementById('currentPoint').textContent = completedPoints + 1;
+                document.getElementById('progressPercent').textContent = progress;
             }
 
             completeTest() {
-                this.testActive = false;
-                document.body.classList.remove('test-active', 'fullscreen-active');
+                this.isTestRunning = false;
 
-                const endTime = new Date();
-                const duration = Math.round((endTime - this.startTime) / 1000);
+                // Calculate reliability indices
+                const fpPercent = this.reliabilityTrials > 0 ? (this.falsePositives / this.reliabilityTrials * 100) : 0;
+                const fnPercent = this.reliabilityTrials > 0 ? (this.falseNegatives / this.reliabilityTrials * 100) : 0;
+                const flPercent = this.reliabilityTrials > 0 ? (this.fixationLosses / this.reliabilityTrials * 100) : 0;
 
-                // Calculate results
-                const results = this.calculateResults(duration);
+                // Calculate statistics
+                const validThresholds = this.thresholds.filter(t => t > 0);
+                const meanDeviation = validThresholds.length > 0 ? 
+                    (validThresholds.reduce((a, b) => a + b, 0) / validThresholds.length) - 29.5 : 0;
+                const variance = validThresholds.length > 0 ? 
+                    validThresholds.reduce((sum, val) => sum + Math.pow(val - 29.5, 2), 0) / validThresholds.length : 0;
+                const patternSD = Math.sqrt(variance);
+
+                this.showResults(fpPercent, fnPercent, flPercent, meanDeviation, patternSD);
+                this.saveResults();
+            }
+
+            showResults(fpPercent, fnPercent, flPercent, meanDeviation, patternSD) {
+                document.getElementById('testArea').style.display = 'none';
+                document.getElementById('results').style.display = 'block';
+
+                // Update reliability indices
+                const fpElement = document.getElementById('fpPercent');
+                const fnElement = document.getElementById('fnPercent');
+                const flElement = document.getElementById('flPercent');
+
+                fpElement.textContent = fpPercent.toFixed(1) + '%';
+                fnElement.textContent = fnPercent.toFixed(1) + '%';
+                flElement.textContent = flPercent.toFixed(1) + '%';
+
+                // Color code reliability
+                fpElement.className = fpPercent > 15 ? 'reliability-value alert' : 'reliability-value good';
+                fnElement.className = fnPercent > 25 ? 'reliability-value alert' : 'reliability-value good';
+                flElement.className = flPercent > 20 ? 'reliability-value alert' : 'reliability-value good';
+
+                // Show alerts
+                const alertsDiv = document.getElementById('reliabilityAlerts');
+                let alerts = [];
+                if (fpPercent > 15) alerts.push('⚠️ High false positive rate');
+                if (fnPercent > 25) alerts.push('⚠️ High false negative rate');
+                if (flPercent > 20) alerts.push('⚠️ Poor fixation');
+
+                alertsDiv.innerHTML = alerts.length > 0 ? 
+                    '<div class="alert">' + alerts.join('<br>') + '</div>' : 
+                    '<div class="good">✅ Reliable test results</div>';
+
+                // Update statistics
+                document.getElementById('meanDeviation').textContent = meanDeviation.toFixed(1);
+                document.getElementById('patternSD').textContent = patternSD.toFixed(1);
+
+                // Generate heatmap
+                this.generateHeatmap();
+
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                }
+            }
+
+            generateHeatmap() {
+                const heatmap = document.getElementById('heatmap');
+                heatmap.innerHTML = '';
+
+                // Create 9x6 grid representation
+                for (let row = 0; row < 6; row++) {
+                    for (let col = 0; col < 9; col++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'heatmap-cell';
+
+                        // Find corresponding test point
+                        const pointIndex = this.findPointForGridPosition(row, col);
+                        if (pointIndex !== -1) {
+                            const threshold = this.thresholds[pointIndex];
+                            const value = Math.max(0, threshold);
+
+                            // Color based on sensitivity
+                            const hue = (value / 40) * 120; // Green to red scale
+                            cell.style.backgroundColor = `hsl(${hue}, 70%, 50%)`;
+                            cell.textContent = Math.round(value);
+                        } else {
+                            cell.style.backgroundColor = '#333';
+                        }
+
+                        heatmap.appendChild(cell);
+                    }
+                }
+            }
+
+            findPointForGridPosition(row, col) {
+                // Simplified mapping - would need proper grid layout mapping
+                const index = row * 9 + col;
+                return index < this.testPoints.length ? index : -1;
+            }
+
+            saveResults() {
+                const testData = {
+                    patient: this.patientData,
+                    startTime: new Date(this.testStartTime).toISOString(),
+                    endTime: new Date().toISOString(),
+                    duration: (Date.now() - this.testStartTime) / 1000,
+                    testResults: this.testResults,
+                    thresholds: this.thresholds,
+                    reliabilityTests: this.reliabilityTests,
+                    falsePositives: this.falsePositives,
+                    falseNegatives: this.falseNegatives,
+                    fixationLosses: this.fixationLosses,
+                    reliabilityTrials: this.reliabilityTrials
+                };
+
+                // Send to server
+                fetch('/api/save_result', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(testData)
+                });
 
                 // Notify doctor
-                if (this.socket) {
-                    this.socket.emit('test_completed', {
-                        test: 'visual_field',
-                        patient: this.patientName,
-                        results: results
-                    });
-                }
-
-                // Save and show results
-                this.saveResults(results);
-                this.showResults(results);
+                this.socket.emit('test_completed', testData);
             }
 
-            calculateResults(duration) {
-                const meanDeviation = this.calculateMD();
-                const patternDeviation = this.calculatePSD();
-                const visualFieldIndex = this.calculateVFI();
-
-                return {
-                    patient_name: this.patientName,
-                    patient_age: this.patientAge,
-                    patient_id: this.patientId,
-                    test_name: 'humphrey_visual_field_24_2',
-                    duration: duration,
-                    total_points: this.totalPoints,
-                    points_seen: this.pointsSeen,
-                    detection_rate: Math.round((this.pointsSeen / this.totalPoints) * 100),
-                    mean_deviation: meanDeviation,
-                    pattern_standard_deviation: patternDeviation,
-                    visual_field_index: visualFieldIndex,
-                    false_positives: this.falsePositives,
-                    false_negatives: this.falseNegatives,
-                    fixation_losses: this.fixationLosses,
-                    reliability_score: this.calculateReliability(),
-                    responses: this.responses,
-                    threshold_map: this.generateThresholdMap(),
-                    start_time: this.startTime.toISOString(),
-                    end_time: new Date().toISOString()
-                };
-            }
-
-            calculateMD() {
-                // Simplified Mean Deviation calculation
-                const seenPoints = this.responses.filter(r => r.seen);
-                const avgThreshold = seenPoints.reduce((sum, r) => sum + r.dbLevel, 0) / seenPoints.length;
-                return avgThreshold - 24; // 24 dB is normal reference
-            }
-
-            calculatePSD() {
-                // Simplified Pattern Standard Deviation
-                const thresholds = this.responses.map(r => r.dbLevel);
-                const mean = thresholds.reduce((sum, t) => sum + t, 0) / thresholds.length;
-                const variance = thresholds.reduce((sum, t) => sum + Math.pow(t - mean, 2), 0) / thresholds.length;
-                return Math.sqrt(variance);
-            }
-
-            calculateVFI() {
-                // Visual Field Index (simplified)
-                return Math.max(0, Math.min(100, (this.pointsSeen / this.totalPoints) * 100));
-            }
-
-            calculateReliability() {
-                const totalReliabilityTests = Math.max(1, this.reliabilityTests);
-                const fpRate = (this.falsePositives / totalReliabilityTests) * 100;
-                const fnRate = (this.falseNegatives / totalReliabilityTests) * 100;
-                const flRate = (this.fixationLosses / totalReliabilityTests) * 100;
-
-                if (fpRate > 15 || fnRate > 25 || flRate > 20) {
-                    return 'Poor';
-                } else if (fpRate > 10 || fnRate > 15 || flRate > 15) {
-                    return 'Fair';
-                } else {
-                    return 'Good';
-                }
-            }
-
-            generateThresholdMap() {
-                return this.responses.map(r => ({
-                    pointId: r.pointId,
-                    degreeX: r.degreeX,
-                    degreeY: r.degreeY,
-                    threshold: r.dbLevel,
-                    seen: r.seen,
-                    defect: r.dbLevel < 15 && !r.seen
-                }));
-            }
-
-            saveResults(data) {
-                fetch('/api/save_test_result', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                })
-                .then(response => response.json())
-                .then(result => console.log('Results saved:', result))
-                .catch(error => console.error('Error saving results:', error));
-            }
-
-            showResults(data) {
-                document.body.innerHTML = `
-                    <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center" style="background: #1a1a1a; color: white; padding: 20px;">
-                        <div class="text-center" style="max-width: 800px; width: 100%;">
-                            <div class="mb-4">
-                                <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
-                                <h2>Humphrey Visual Field Test Completed</h2>
-                                <p class="text-muted">Patient: ${data.patient_name} (ID: ${data.patient_id})</p>
-                            </div>
-
-                            <div class="row g-3 mb-4">
-                                <div class="col-md-3 col-6">
-                                    <div class="card bg-dark border-primary">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-primary">${data.detection_rate}%</h3>
-                                            <small>Detection Rate</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <div class="card bg-dark border-info">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-info">${Math.round(data.duration / 60)}m</h3>
-                                            <small>Duration</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <div class="card bg-dark border-warning">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-warning">${data.mean_deviation.toFixed(1)} dB</h3>
-                                            <small>Mean Deviation</small>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 col-6">
-                                    <div class="card bg-dark border-success">
-                                        <div class="card-body text-center">
-                                            <h3 class="text-success">${data.reliability_score}</h3>
-                                            <small>Reliability</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card bg-dark border-secondary mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title">Clinical Summary</h5>
-                                    <div class="row text-start">
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li><strong>VFI:</strong> ${data.visual_field_index.toFixed(1)}%</li>
-                                                <li><strong>PSD:</strong> ${data.pattern_standard_deviation.toFixed(2)} dB</li>
-                                                <li><strong>Points Tested:</strong> ${data.total_points}</li>
-                                            </ul>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <ul class="list-unstyled">
-                                                <li><strong>False Positives:</strong> ${data.false_positives}</li>
-                                                <li><strong>False Negatives:</strong> ${data.false_negatives}</li>
-                                                <li><strong>Fixation Losses:</strong> ${data.fixation_losses}</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="d-flex flex-wrap gap-3 justify-content-center">
-                                <button class="btn btn-primary btn-lg" onclick="window.location.href='/patient'">
-                                    <i class="fas fa-arrow-left me-2"></i>
-                                    Back to Tests
-                                </button>
-                                <button class="btn btn-success btn-lg" onclick="location.reload()">
-                                    <i class="fas fa-redo me-2"></i>
-                                    Retake Test
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
+            restartTest() {
+                location.reload();
             }
         }
 
-        let test = null;
-
-        function savePatientInfo() {
-            const name = document.getElementById('patient-name').value.trim();
-            const age = document.getElementById('patient-age').value.trim();
-            const id = document.getElementById('patient-id').value.trim();
+        function showInstructions() {
+            const name = document.getElementById('patientName').value;
+            const age = document.getElementById('patientAge').value;
+            const id = document.getElementById('patientId').value;
 
             if (!name || !age || !id) {
                 alert('Please fill in all patient information fields.');
                 return;
             }
 
-            // Store patient info
-            localStorage.setItem('patientName', name);
-            localStorage.setItem('patientAge', age);
-            localStorage.setItem('patientId', id);
-
-            // Hide modal and show instructions
-            document.getElementById('patient-info-modal').style.display = 'none';
-        }
-
-        function startFullscreenTest() {
-            test = new HumphreyVisualFieldTest();
-            test.patientName = localStorage.getItem('patientName') || 'Unknown';
-            test.patientAge = localStorage.getItem('patientAge') || 'Unknown';
-            test.patientId = localStorage.getItem('patientId') || 'Unknown';
-
-            // Request fullscreen
-            test.isFullscreen = true;
-            test.requestFullscreen();
-
-            // Start test after brief delay
-            setTimeout(() => {
-                test.start();
-            }, 500);
+            document.getElementById('patientForm').style.display = 'none';
+            document.getElementById('instructions').style.display = 'block';
         }
 
         function startTest() {
-            test = new HumphreyVisualFieldTest();
-            test.patientName = localStorage.getItem('patientName') || 'Unknown';
-            test.patientAge = localStorage.getItem('patientAge') || 'Unknown';
-            test.patientId = localStorage.getItem('patientId') || 'Unknown';
-
-            test.isFullscreen = false;
-            test.start();
+            test.startTest();
         }
 
-        function toggleFullscreen() {
-            if (test) {
-                if (document.fullscreenElement) {
-                    document.exitFullscreen();
-                    test.updateFullscreenButton(false);
-                    document.body.classList.remove('fullscreen-active');
-                } else {
-                    test.requestFullscreen();
-                }
-            }
+        function restartTest() {
+            test.restartTest();
         }
 
-        function exitTest() {
-            if (confirm('Are you sure you want to exit this test?')) {
-                if (test) {
-                    test.testActive = false;
-                }
-                document.body.classList.remove('test-active', 'fullscreen-active');
-                window.location.href = '/patient';
-            }
-        }
-
-        // Global click handler for stimulus detection
-        document.addEventListener('click', function(e) {
-            if (test && test.testActive) {
-                test.handleGlobalClick();
-            }
-        });
-
-        // Handle fullscreen changes
-        document.addEventListener('fullscreenchange', function() {
-            if (test) {
-                test.updateFullscreenButton(!!document.fullscreenElement);
-                if (document.fullscreenElement) {
-                    document.body.classList.add('fullscreen-active');
-                } else {
-                    document.body.classList.remove('fullscreen-active');
-                }
-            }
-        });
-
-        // Prevent accidental exits during test
-        document.addEventListener('keydown', function(e) {
-            if (test && test.testActive) {
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    if (confirm('Exit test?')) {
-                        exitTest();
-                    }
-                }
-                // Spacebar as alternative response
-                else if (e.key === ' ') {
-                    e.preventDefault();
-                    test.handleGlobalClick();
-                }
-            }
-        });
-
-        // Check if patient info exists
-        document.addEventListener('DOMContentLoaded', function() {
-            const patientName = localStorage.getItem('patientName');
-            if (!patientName) {
-                // Show patient info modal
-                document.getElementById('patient-info-modal').style.display = 'flex';
-            } else {
-                // Hide patient info modal
-                document.getElementById('patient-info-modal').style.display = 'none';
-            }
-        });
-
-        // Mobile optimizations
-        function isMobileDevice() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-
-        // Prevent zoom on mobile
-        document.addEventListener('gesturestart', function (e) {
-            e.preventDefault();
-        });
-
-        document.addEventListener('gesturechange', function (e) {
-            e.preventDefault();
-        });
-
-        document.addEventListener('gestureend', function (e) {
-            e.preventDefault();
+        // Initialize test when page loads
+        let test;
+        window.addEventListener('load', () => {
+            test = new VisualFieldTest();
         });
     </script>
+    <script src="/socket.io/socket.io.js"></script>
 </body>
 </html>
