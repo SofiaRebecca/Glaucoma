@@ -1,6 +1,6 @@
 saveResults(data) {
                 const testData = {
-                    test_name: 'pelli_robinson',
+                    test_name: 'pelli_robson',
                     patient_name: data.patient_name,
                     duration: data.duration,
                     total_points: data.total_points,
@@ -15,7 +15,8 @@ saveResults(data) {
 
                 console.log('Saving test data:', testData);
 
-                fetch('/api/save_test_result', {
+                // Save to main server
+                fetch('http://localhost:5000/api/save_test_result', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -24,7 +25,6 @@ saveResults(data) {
                 })
                 .then(response => {
                     console.log('Response status:', response.status);
-                    console.log('Response ok:', response.ok);
                     
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -38,7 +38,7 @@ saveResults(data) {
                         alert('Test results saved successfully!');
                         // Redirect back to patient dashboard after a short delay
                         setTimeout(() => {
-                            window.location.href = '/patient';
+                            window.location.href = 'http://localhost:5000/patient';
                         }, 1500);
                     } else {
                         throw new Error(result.message || 'Failed to save results');
@@ -46,7 +46,6 @@ saveResults(data) {
                 })
                 .catch(error => {
                     console.error('Error saving results:', error);
-                    console.error('Error message:', error.message);
                     alert('Error saving results: ' + error.message);
                 });
             }
