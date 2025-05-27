@@ -9,7 +9,7 @@
     <title>Humphrey Visual Field 24-2 Test</title>
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script src="https://cdn.socket.io/4.6.2/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         body {
             background: #000;
@@ -486,13 +486,15 @@
             }
 
             handleGlobalClick() {
-                if (!this.responseReceived && this.stimulusStartTime) {
+                if (this.stimulusActive && !this.responseReceived && this.stimulusStartTime) {
                     const responseTime = Date.now() - this.stimulusStartTime;
                     // Accept any click within 1500ms of stimulus appearing as "seen"
-                    if (responseTime >= 50 && responseTime <= 1500) {
+                    if (responseTime >= 10 && responseTime <= 1500) {
                         this.handleResponse(true);
+                        return true;
                     }
                 }
+                return false;
             }
 
             handleResponse(seen) {
@@ -750,10 +752,15 @@
 
         // Global click handler for stimulus detection
         document.addEventListener('click', function(e) {
-            if (test && test.testActive) {
-                test.handleGlobalClick();
+            if (test && test.testActive && test.stimulusActive) {
+                e.preventDefault();
+                e.stopPropagation();
+                const handled = test.handleGlobalClick();
+                if (handled) {
+                    console.log('Valid click registered - Points seen:', test.pointsSeen);
+                }
             }
-        });
+        }, true);
 
         // Handle fullscreen changes
         document.addEventListener('fullscreenchange', function() {
