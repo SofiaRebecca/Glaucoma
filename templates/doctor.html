@@ -328,6 +328,8 @@
                 command: 'start',
                 test: selectedTest
             });
+            
+            showCommandStatus(`Starting ${getTestDisplayName(selectedTest)} test`, 'success');
         });
         
         document.getElementById('skip-test-btn').addEventListener('click', function() {
@@ -335,6 +337,8 @@
                 command: 'skip',
                 test: 'current'
             });
+            
+            showCommandStatus('Skip command sent', 'warning');
         });
         
         document.getElementById('stop-test-btn').addEventListener('click', function() {

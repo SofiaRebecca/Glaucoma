@@ -130,8 +130,24 @@ def handle_patient_view_update(data):
     """Handle patient view updates for doctor synchronization"""
     logging.info(f"Patient view update: {data}")
     
-    # Forward to doctor room
-    socketio.emit('patient_view_update', data, to=doctor_room)
+    # Forward to doctor room with enhanced data
+    enhanced_data = {
+        **data,
+        'timestamp': data.get('timestamp', int(time.time() * 1000)),
+        'mirror_enabled': True
+    }
+    
+    socketio.emit('patient_view_update', enhanced_data, to=doctor_room)
+
+@socketio.on('enable_screen_mirror')
+def handle_screen_mirror(data):
+    """Handle screen mirroring requests from doctor"""
+    socketio.emit('mirror_screen', data, to=patient_room)
+
+@socketio.on('patient_screen_data')
+def handle_patient_screen_data(data):
+    """Handle patient screen data for doctor mirroring"""
+    socketio.emit('patient_screen_mirror', data, to=doctor_room)
 
 @socketio.on('patient_navigation')
 def handle_patient_navigation(data):
@@ -152,12 +168,23 @@ def handle_patient_identified(data):
 # Add test routes directly to main app
 @app.route('/test/<test_name>')
 def run_test(test_name):
-    """Route to individual test templates"""
-    # Simple template mapping since all templates are now in main templates folder
-    try:
-        return render_template(f'{test_name}.html')
-    except:
-        return "Test not found", 404
+    """Route to individual test templates with optimized loading"""
+    # Template mapping for faster routing
+    test_templates = {
+        'visual_field': 'visual_field.html',
+        'csv1000': 'csv1000.html',
+        'edge': 'edge.html',
+        'motion': 'motion.html',
+        'pattern': 'pattern.html',
+        'pelli_robinson': 'pelli_robinson.html',
+        'sparcs': 'sparcs.html'
+    }
+    
+    template = test_templates.get(test_name)
+    if template:
+        return render_template(template)
+    else:
+        return redirect(url_for('patient_view'))
 
 if __name__ == '__main__':
     # Start main application on port 5000 for Replit compatibility

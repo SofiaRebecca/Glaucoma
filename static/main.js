@@ -157,19 +157,20 @@ class TestBase {
 }
 
 // Handle keyboard shortcuts
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                if (document.fullscreenElement) {
-                    document.exitFullscreen();
-                } else {
-                    exitTest();
-                }
-            } else if (e.key === 'F11') {
-                e.preventDefault();
-                if (test) {
-                    test.toggleFullscreen();
-                }
-            } else if (test && test.
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        if (document.fullscreenElement) {
+            document.exitFullscreen();
+        } else if (typeof exitTest === 'function') {
+            exitTest();
+        }
+    } else if (e.key === 'F11') {
+        e.preventDefault();
+        if (test && typeof test.toggleFullscreen === 'function') {
+            test.toggleFullscreen();
+        }
+    }
+});
 
 // Utility functions
 function getRandomPosition(container, elementSize = 20) {

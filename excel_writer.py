@@ -85,6 +85,7 @@ class ExcelWriter:
                     'motion': 'Motion Detection',
                     'pattern': 'Pattern Recognition',
                     'pelli_robinson': 'Pelli-Robinson',
+                    'pelli_robson': 'Pelli-Robinson',
                     'sparcs': 'SPARCS'
                 }
                 
