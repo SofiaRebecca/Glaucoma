@@ -368,15 +368,23 @@
                     }
                 }
 
-                // Use a more gradual contrast calculation for better visibility
-                const contrastRatio = Math.pow(10, -(contrastLevel - 1.0)); // Adjust baseline
-                const opacity = Math.max(0.05, Math.min(1.0, contrastRatio * 0.8)); // Ensure minimum visibility
+                // Improved contrast calculation with better visibility after round 2
+                let opacity;
+                if (this.currentRow < 2) {
+                    // First 2 rows with high visibility
+                    opacity = Math.max(0.8, 1.0 - (this.currentRow * 0.1));
+                } else {
+                    // More gradual decrease for subsequent rows with minimum readability
+                    const adjustedLevel = contrastLevel - 0.5; // Shift baseline for better visibility
+                    const contrastRatio = Math.pow(10, -adjustedLevel);
+                    opacity = Math.max(0.15, Math.min(0.8, contrastRatio * 1.2));
+                }
 
                 const lettersText = this.currentRowLetters.join('   ');
                 letterDisplay.innerHTML = lettersText;
                 letterDisplay.style.color = `rgba(255, 255, 255, ${opacity})`;
                 letterDisplay.style.fontSize = '72px';
-                console.log('Displaying letters:', lettersText, 'with gray value:', grayValue);
+                console.log('Displaying letters:', lettersText, 'with opacity:', opacity);
             }
 
             createInputBoxes() {
@@ -633,7 +641,7 @@
                             </div>
 
                             <div class="mt-4">
-                                <button class="btn btn-primary btn-lg me-3" onclick="goBackToTests()">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='/patient'">
                                     <i class="fas fa-arrow-left me-2"></i>
                                     Back to Tests
                                 </button>
@@ -753,7 +761,7 @@
         }
 
         function goBackToTests() {
-            window.location.href = `http://${window.location.hostname}:5000/patient`;
+            window.location.href = '/patient';
         }
 
         document.addEventListener('keydown', function(e) {
