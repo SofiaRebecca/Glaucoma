@@ -343,6 +343,7 @@
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('test-container').style.display = 'flex';
                 this.startTime = new Date();
+                this.setupEventListeners();
                 this.showCurrentLetter();
             }
             
@@ -381,26 +382,59 @@
                 options.forEach((option, index) => {
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'letter-option';
+                    optionDiv.setAttribute('data-letter', option);
                     optionDiv.innerHTML = `
-                        <input type="radio" name="letter-choice" value="${option}" id="option-${index}" onchange="test.selectOption('${option}', this.parentElement)">
+                        <input type="radio" name="letter-choice" value="${option}" id="option-${index}">
                         <label for="option-${index}">${option}</label>
                     `;
                     container.appendChild(optionDiv);
                 });
+                
+                // Reset selected option
+                this.selectedOption = null;
             }
             
-            selectOption(letter, element) {
+            selectOption(letter) {
                 // Clear previous selections
                 document.querySelectorAll('.letter-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
                 
-                // Mark current selection
-                element.classList.add('selected');
+                // Find and mark current selection
+                const selectedElement = document.querySelector(`[data-letter="${letter}"]`);
+                if (selectedElement) {
+                    selectedElement.classList.add('selected');
+                    const radio = selectedElement.querySelector('input[type="radio"]');
+                    if (radio) {
+                        radio.checked = true;
+                    }
+                }
+                
                 this.selectedOption = letter;
                 
                 // Show submit button
                 document.getElementById('submit-btn').style.display = 'block';
+            }
+            
+            setupEventListeners() {
+                // Use event delegation for option selection
+                const container = document.getElementById('options-container');
+                if (container) {
+                    container.addEventListener('click', (e) => {
+                        const optionElement = e.target.closest('.letter-option');
+                        if (optionElement && !optionElement.querySelector('input').disabled) {
+                            const letter = optionElement.getAttribute('data-letter');
+                            this.selectOption(letter);
+                        }
+                    });
+                    
+                    container.addEventListener('change', (e) => {
+                        if (e.target.type === 'radio' && !e.target.disabled) {
+                            const letter = e.target.value;
+                            this.selectOption(letter);
+                        }
+                    });
+                }
             }
             
             submitResponse() {
@@ -446,16 +480,44 @@
                         opt.classList.add('incorrect');
                     }
                     radio.disabled = true;
+                    
+                    // Remove click event handling during feedback
+                    opt.style.pointerEvents = 'none';
                 });
                 
                 // Disable submit button
-                document.getElementById('submit-btn').disabled = true;
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = true;
+                submitBtn.style.display = 'none';
                 
                 // Move to next letter after delay
                 setTimeout(() => {
+                    this.resetUIState();
                     this.currentLetterIndex++;
                     this.showCurrentLetter();
                 }, 1500);
+            }
+            
+            resetUIState() {
+                // Reset all UI elements for next trial
+                this.selectedOption = null;
+                
+                // Reset submit button
+                const submitBtn = document.getElementById('submit-btn');
+                submitBtn.disabled = false;
+                submitBtn.style.display = 'none';
+                
+                // Clear any form state
+                const form = document.getElementById('letter-form');
+                if (form) {
+                    form.reset();
+                }
+                
+                // Re-enable pointer events on options container
+                const container = document.getElementById('options-container');
+                if (container) {
+                    container.style.pointerEvents = 'auto';
+                }
             }
             
             completeTest() {
