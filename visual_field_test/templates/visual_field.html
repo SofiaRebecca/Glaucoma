@@ -318,12 +318,54 @@
                 this.stimulusActive = false;
                 this.responseReceived = false;
                 this.isFullscreen = false;
+                this.socket = null;
 
                 // 4-2 Staircase parameters
                 this.dbLevels = [6, 12, 18, 24, 30, 36]; // dB levels
                 this.pointThresholds = new Array(54).fill(3); // Start at 24 dB
 
+                // Always-on screen state tracking
+                this.currentScreenState = {
+                    screen: 'instructions',
+                    test_type: 'visual_field',
+                    fixation: false,
+                    stimulus: { visible: false },
+                    progress: { current: 0, total: 54, seen: 0 },
+                    timestamp: Date.now()
+                };
+
                 this.testPoints = this.generateTestPoints();
+                this.setupSocketConnection();
+                this.updateScreenState(this.currentScreenState);
+            }
+
+            setupSocketConnection() {
+                this.socket = io();
+                this.socket.on('connect', () => {
+                    console.log('Connected to server for live monitoring');
+                    // Send current state immediately upon connection
+                    this.updateScreenState(this.currentScreenState);
+                });
+
+                // Respond to doctor requests for current state
+                this.socket.on('doctor_joined', (data) => {
+                    if (data.test_type === 'visual_field') {
+                        this.updateScreenState(this.currentScreenState);
+                    }
+                });
+            }
+
+            updateScreenState(state) {
+                this.currentScreenState = {
+                    ...state,
+                    test_type: 'visual_field',
+                    patient: this.patientName,
+                    timestamp: Date.now()
+                };
+                
+                if (this.socket) {
+                    this.socket.emit('screen_update', this.currentScreenState);
+                }
             }
 
             generateTestPoints() {

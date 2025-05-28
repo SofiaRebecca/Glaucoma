@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -335,7 +334,7 @@
             <div class="mb-4">
                 <p class="lead">This test evaluates your peripheral vision using the standard 24-2 grid pattern with 54 test points.</p>
             </div>
-            
+
             <div class="mb-4 text-start">
                 <h5><i class="fas fa-list-ul me-2"></i>Instructions:</h5>
                 <ul class="list-unstyled">
@@ -403,9 +402,7 @@
     <script>
         class HumphreyVisualFieldTest {
             constructor() {
-                this.patientName = '';
-                this.patientAge = '';
-                this.patientId = '';
+                this.patientName = localStorage.getItem('patientName') || 'Unknown';
                 this.startTime = null;
                 this.currentPoint = 0;
                 this.totalPoints = 54;
@@ -422,24 +419,49 @@
                 // 4-2 Staircase parameters
                 this.dbLevels = [6, 12, 18, 24, 30, 36]; // dB levels
                 this.pointThresholds = new Array(54).fill(3); // Start at 24 dB
-                this.reversalCounts = new Array(54).fill(0);
-                this.lastResponse = new Array(54).fill(null);
 
-                // Reliability testing
-                this.falsePositives = 0;
-                this.falseNegatives = 0;
-                this.fixationLosses = 0;
-                this.reliabilityTests = 0;
+                // Always-on screen state tracking
+                this.currentScreenState = {
+                    screen: 'instructions',
+                    test_type: 'visual_field',
+                    fixation: false,
+                    stimulus: { visible: false },
+                    progress: { current: 0, total: 54, seen: 0 },
+                    timestamp: Date.now()
+                };
 
                 this.testPoints = this.generateTestPoints();
                 this.setupSocketConnection();
+                this.updateScreenState(this.currentScreenState);
             }
 
             setupSocketConnection() {
                 this.socket = io();
                 this.socket.on('connect', () => {
                     console.log('Connected to server for live monitoring');
+                    // Send current state immediately upon connection
+                    this.updateScreenState(this.currentScreenState);
                 });
+
+                // Respond to doctor requests for current state
+                this.socket.on('doctor_joined', (data) => {
+                    if (data.test_type === 'visual_field') {
+                        this.updateScreenState(this.currentScreenState);
+                    }
+                });
+            }
+
+            updateScreenState(state) {
+                this.currentScreenState = {
+                    ...state,
+                    test_type: 'visual_field',
+                    patient: this.patientName,
+                    timestamp: Date.now()
+                };
+
+                if (this.socket) {
+                    this.socket.emit('screen_update', this.currentScreenState);
+                }
             }
 
             generateTestPoints() {
@@ -456,13 +478,13 @@
                     [-3, -3], [3, -3], [-3, 3], [3, 3],
                     [-6, -3], [6, -3], [-6, 3], [6, 3],
                     [-3, -6], [3, -6], [-3, 6], [3, 6],
-                    
+
                     // Intermediate ring
                     [-9, 0], [9, 0], [0, -9], [0, 9],
                     [-9, -3], [9, -3], [-9, 3], [9, 3],
                     [-6, -6], [6, -6], [-6, 6], [6, 6],
                     [-3, -9], [3, -9], [-3, 9], [3, 9],
-                    
+
                     // Outer ring
                     [-12, 0], [12, 0], [0, -12], [0, 12],
                     [-15, 0], [15, 0], [0, -15], [0, 15],
@@ -493,9 +515,17 @@
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('test-container').style.display = 'block';
                 document.body.classList.add('test-active');
-                
+
                 this.startTime = new Date();
                 this.testActive = true;
+
+                // Update screen state for test start
+                this.updateScreenState({
+                    screen: 'test',
+                    fixation: true,
+                    stimulus: { visible: false },
+                    progress: { current: 0, total: 54, seen: 0 }
+                });
 
                 // Ensure fullscreen persists
                 this.maintainFullscreen();
@@ -539,7 +569,7 @@
                 } else if (elem.msRequestFullscreen) {
                     elem.msRequestFullscreen();
                 }
-                
+
                 document.body.classList.add('fullscreen-active');
                 this.updateFullscreenButton(true);
             }
@@ -600,20 +630,22 @@
                 document.querySelector('.test-area').appendChild(this.currentStimulus);
 
                 // Emit screen update to doctor
-                if (this.socket) {
-                    this.socket.emit('screen_update', {
-                        fixation: true,
-                        stimulus: {
-                            x: point.x,
-                            y: point.y,
-                            visible: true,
-                            intensity: intensity,
-                            pointId: this.currentPoint
-                        },
-                        timestamp: this.stimulusStartTime,
-                        patient: this.patientName
-                    });
-                }
+                this.updateScreenState({
+                    screen: 'test',
+                    fixation: true,
+                    stimulus: {
+                        x: point.x,
+                        y: point.y,
+                        visible: true,
+                        intensity: intensity,
+                        pointId: this.currentPoint
+                    },
+                    progress: {
+                        current: this.currentPoint + 1,
+                        total: this.totalPoints,
+                        seen: this.pointsSeen
+                    }
+                });
 
                 // Auto-hide stimulus after 500ms
                 setTimeout(() => {
@@ -622,14 +654,16 @@
                         this.currentStimulus = null;
                     }
                     // Emit stimulus hidden to doctor
-                    if (this.socket) {
-                        this.socket.emit('screen_update', {
-                            fixation: true,
-                            stimulus: { visible: false },
-                            timestamp: Date.now(),
-                            patient: this.patientName
-                        });
-                    }
+                    this.updateScreenState({
+                        screen: 'test',
+                        fixation: true,
+                        stimulus: { visible: false },
+                        progress: {
+                            current: this.currentPoint + 1,
+                            total: this.totalPoints,
+                            seen: this.pointsSeen
+                        }
+                    });
                 }, 500);
 
                 // Auto-timeout response window after 1500ms
@@ -748,7 +782,7 @@
                 document.getElementById('points-seen').textContent = this.pointsSeen;
                 document.getElementById('progress-percent').textContent = 
                     Math.round((this.currentPoint / this.totalPoints) * 100) + '%';
-                
+
                 if (this.currentPoint < this.totalPoints) {
                     const currentDb = this.dbLevels[this.pointThresholds[this.currentPoint]];
                     document.getElementById('current-intensity').textContent = currentDb + ' dB';
@@ -764,6 +798,24 @@
 
                 // Calculate results
                 const results = this.calculateResults(duration);
+
+                // Update screen state for completion
+                this.updateScreenState({
+                    screen: 'results',
+                    fixation: false,
+                    stimulus: { visible: false },
+                    progress: {
+                        current: this.totalPoints,
+                        total: this.totalPoints,
+                        seen: this.pointsSeen
+                    },
+                    results: {
+                        detection_rate: results.detection_rate,
+                        duration: duration,
+                        mean_deviation: results.mean_deviation,
+                        reliability_score: results.reliability_score
+                    }
+                });
 
                 // Notify doctor
                 if (this.socket) {
@@ -828,7 +880,7 @@
             }
 
             calculateReliability() {
-                const totalReliabilityTests = Math.max(1, this.reliabilityTests);
+                const totalReliabilityTests = Math.max(1, this.reliabilityTests);```text
                 const fpRate = (this.falsePositives / totalReliabilityTests) * 100;
                 const fnRate = (this.falseNegatives / totalReliabilityTests) * 100;
                 const flRate = (this.fixationLosses / totalReliabilityTests) * 100;
@@ -970,13 +1022,16 @@
 
         function startFullscreenTest() {
             test = new HumphreyVisualFieldTest();
-            test.patientName = localStorage.getItem('patientName') || 'Unknown';
-            test.patientAge = localStorage.getItem('patientAge') || 'Unknown';
-            test.patientId = localStorage.getItem('patientId') || 'Unknown';
-
-            // Request fullscreen
             test.isFullscreen = true;
             test.requestFullscreen();
+
+            // Update screen state for test preparation
+            test.updateScreenState({
+                screen: 'starting',
+                fixation: false,
+                stimulus: { visible: false },
+                progress: { current: 0, total: 54, seen: 0 }
+            });
 
             // Start test after brief delay
             setTimeout(() => {
@@ -986,11 +1041,16 @@
 
         function startTest() {
             test = new HumphreyVisualFieldTest();
-            test.patientName = localStorage.getItem('patientName') || 'Unknown';
-            test.patientAge = localStorage.getItem('patientAge') || 'Unknown';
-            test.patientId = localStorage.getItem('patientId') || 'Unknown';
-
             test.isFullscreen = false;
+
+            // Update screen state for test preparation
+            test.updateScreenState({
+                screen: 'starting',
+                fixation: false,
+                stimulus: { visible: false },
+                progress: { current: 0, total: 54, seen: 0 }
+            });
+
             test.start();
         }
 

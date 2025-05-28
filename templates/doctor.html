@@ -7,7 +7,7 @@
     <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/static/style.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <script src="https://cdn.socket.io/4.6.2/socket.io.min.js"></script>
 </head>
 <body>
     <nav class="navbar navbar-dark bg-primary">
@@ -306,7 +306,7 @@
 		socket.on('screen_update', function(data) {
 			console.log('Visual field screen update:', data);
 			currentVisualFieldState = data;
-			if (vfContext) {
+			if (vfContext && mirroring) {
 				drawVisualFieldMirror(data);
 				// Show visual field canvas instead of regular mirror
 				if (visualFieldCanvas) {
@@ -317,6 +317,12 @@
 			}
 		});
 
+		// When doctor connects, request current screen state from patient
+		socket.on('connect', function() {
+			console.log('Doctor connected, requesting patient screen state');
+			socket.emit('doctor_joined', { test_type: 'visual_field' });
+		});
+
 		function drawVisualFieldMirror(data) {
 			if (!vfContext || !data) return;
 
@@ -324,36 +330,85 @@
 			vfContext.fillStyle = '#222';
 			vfContext.fillRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
 
-			// Draw fixation cross if present
-			if (data.fixation) {
-				vfContext.fillStyle = '#ff0000';
-				vfContext.font = 'bold 32px monospace';
-				vfContext.textAlign = 'center';
-				vfContext.textBaseline = 'middle';
-				vfContext.fillText('+', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+			// Draw screen state overlay
+			vfContext.fillStyle = '#00ff00';
+			vfContext.font = '14px Arial';
+			vfContext.textAlign = 'left';
+			vfContext.fillText(`Screen: ${data.screen || 'unknown'}`, 10, 25);
+			
+			if (data.progress) {
+				vfContext.fillText(`Progress: ${data.progress.current}/${data.progress.total} (${data.progress.seen} seen)`, 10, 45);
 			}
 
-			// Draw stimulus if visible
-			if (data.stimulus && data.stimulus.visible) {
-				const stimulus = data.stimulus;
-				// Scale coordinates to canvas size
-				const scaleX = visualFieldCanvas.width / window.screen.width;
-				const scaleY = visualFieldCanvas.height / window.screen.height;
+			// Handle different screen states
+			switch (data.screen) {
+				case 'instructions':
+					vfContext.fillStyle = '#ffffff';
+					vfContext.font = '24px Arial';
+					vfContext.textAlign = 'center';
+					vfContext.fillText('Instructions Screen', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+					break;
 				
-				const x = (stimulus.x || 0) * scaleX;
-				const y = (stimulus.y || 0) * scaleY;
+				case 'starting':
+					vfContext.fillStyle = '#ffff00';
+					vfContext.font = '24px Arial';
+					vfContext.textAlign = 'center';
+					vfContext.fillText('Test Starting...', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+					break;
 				
-				vfContext.fillStyle = `rgba(255, 255, 255, ${stimulus.intensity || 1})`;
-				vfContext.beginPath();
-				vfContext.arc(x, y, 8, 0, 2 * Math.PI);
-				vfContext.fill();
+				case 'test':
+					// Draw fixation cross if present
+					if (data.fixation) {
+						vfContext.fillStyle = '#ff0000';
+						vfContext.font = 'bold 32px monospace';
+						vfContext.textAlign = 'center';
+						vfContext.textBaseline = 'middle';
+						vfContext.fillText('+', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+					}
 
-				// Add point info overlay
-				vfContext.fillStyle = '#00ff00';
-				vfContext.font = '12px Arial';
-				vfContext.textAlign = 'left';
-				vfContext.fillText(`Point ${stimulus.pointId || 0}`, x + 15, y - 10);
-				vfContext.fillText(`Intensity: ${((stimulus.intensity || 1) * 100).toFixed(0)}%`, x + 15, y + 5);
+					// Draw stimulus if visible
+					if (data.stimulus && data.stimulus.visible) {
+						const stimulus = data.stimulus;
+						// Scale coordinates to canvas size (assuming 800x600 patient screen)
+						const scaleX = visualFieldCanvas.width / 800;
+						const scaleY = visualFieldCanvas.height / 600;
+						
+						const x = (stimulus.x || 0) * scaleX;
+						const y = (stimulus.y || 0) * scaleY;
+						
+						vfContext.fillStyle = `rgba(255, 255, 255, ${stimulus.intensity || 1})`;
+						vfContext.beginPath();
+						vfContext.arc(x, y, 8, 0, 2 * Math.PI);
+						vfContext.fill();
+
+						// Add point info overlay
+						vfContext.fillStyle = '#00ff00';
+						vfContext.font = '12px Arial';
+						vfContext.textAlign = 'left';
+						vfContext.fillText(`Point ${stimulus.pointId || 0}`, x + 15, y - 10);
+						vfContext.fillText(`Intensity: ${((stimulus.intensity || 1) * 100).toFixed(0)}%`, x + 15, y + 5);
+					}
+					break;
+				
+				case 'results':
+					vfContext.fillStyle = '#00ff00';
+					vfContext.font = '24px Arial';
+					vfContext.textAlign = 'center';
+					vfContext.fillText('Test Complete', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 - 40);
+					
+					if (data.results) {
+						vfContext.font = '16px Arial';
+						vfContext.fillText(`Detection Rate: ${data.results.detection_rate}%`, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+						vfContext.fillText(`Duration: ${data.results.duration}s`, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 + 20);
+						vfContext.fillText(`Reliability: ${data.results.reliability_score}`, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 + 40);
+					}
+					break;
+				
+				default:
+					vfContext.fillStyle = '#888';
+					vfContext.font = '18px Arial';
+					vfContext.textAlign = 'center';
+					vfContext.fillText('Patient Activity', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
 			}
 
 			// Add timestamp

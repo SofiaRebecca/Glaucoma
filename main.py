@@ -232,6 +232,14 @@ def handle_screen_update(data):
         'timestamp': data.get('timestamp', int(time.time() * 1000))
     }, to=doctor_room)
 
+@socketio.on('doctor_joined')
+def handle_doctor_joined(data):
+    """Handle doctor requesting current patient screen state"""
+    logging.info(f"Doctor joined, requesting screen state for: {data}")
+    
+    # Request current screen state from patient
+    socketio.emit('doctor_joined', data, to=patient_room)
+
 @socketio.on('start_screen_mirror')
 def handle_start_screen_mirror(data):
     """Start screen mirroring session"""
