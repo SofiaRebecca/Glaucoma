@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -38,17 +39,58 @@
         }
         
         .options-container {
-            display: flex;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
             gap: 20px;
             margin-bottom: 20px;
+            max-width: 400px;
         }
         
-        .option-btn {
-            min-width: 80px;
+        .letter-option {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             min-height: 80px;
-            font-size: 36px;
+            min-width: 150px;
+            font-size: 24px;
             font-family: 'Courier New', monospace;
             font-weight: bold;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 15px;
+        }
+        
+        .letter-option:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .letter-option input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .letter-option.selected {
+            background: rgba(0, 123, 255, 0.3);
+            border-color: #007bff;
+        }
+        
+        .letter-option.correct {
+            background: rgba(40, 167, 69, 0.5);
+            border-color: #28a745;
+        }
+        
+        .letter-option.incorrect {
+            background: rgba(220, 53, 69, 0.5);
+            border-color: #dc3545;
         }
         
         .instructions {
@@ -101,6 +143,27 @@
             border-radius: 5px;
             font-size: 14px;
         }
+
+        .submit-btn {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-size: 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .submit-btn:hover {
+            background: #0056b3;
+        }
+
+        .submit-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -116,7 +179,8 @@
             <h5>Instructions:</h5>
             <ul class="text-start">
                 <li>A letter will appear on the screen at varying contrast levels</li>
-                <li>Click on the button that matches the letter you see</li>
+                <li>Select the radio button for the letter you see</li>
+                <li>Click Submit to confirm your choice</li>
                 <li>If you cannot see the letter clearly, make your best guess</li>
                 <li>The test will gradually reduce contrast to find your threshold</li>
             </ul>
@@ -136,7 +200,7 @@
     
     <div id="test-container" class="test-container" style="display: none;">
         <div class="test-info">
-            <div>Letter: <span id="current-letter">0</span> / 48</div>
+            <div>Letter: <span id="current-letter">0</span> / 80</div>
             <div>Correct: <span id="correct-count">0</span></div>
             <div>Language: <span id="current-language">English</span></div>
         </div>
@@ -150,9 +214,15 @@
         
         <div id="letter-display" class="letter-display">C</div>
         
-        <div class="options-container" id="options-container">
-            <!-- Options will be generated dynamically -->
-        </div>
+        <form id="letter-form">
+            <div class="options-container" id="options-container">
+                <!-- Options will be generated dynamically -->
+            </div>
+            <button type="button" class="submit-btn" id="submit-btn" onclick="submitResponse()">
+                <i class="fas fa-check me-2"></i>
+                Submit
+            </button>
+        </form>
         
         <div class="contrast-info">
             Contrast Level: <span id="contrast-level">100%</span>
@@ -174,6 +244,7 @@
                 this.responses = [];
                 this.currentLanguage = 'english';
                 this.testStartTime = null;
+                this.selectedOption = null;
                 
                 // Letter sets for both languages
                 this.letterSets = {
@@ -283,6 +354,7 @@
                 
                 const currentTest = this.testSequence[this.currentLetterIndex];
                 this.testStartTime = Date.now();
+                this.selectedOption = null;
                 
                 // Update display
                 document.getElementById('current-letter').textContent = this.currentLetterIndex + 1;
@@ -297,19 +369,48 @@
                 
                 // Generate option buttons
                 this.showOptions(currentTest.options, currentTest.letter);
+                
+                // Hide submit button initially
+                document.getElementById('submit-btn').style.display = 'none';
             }
             
             showOptions(options, correctLetter) {
                 const container = document.getElementById('options-container');
                 container.innerHTML = '';
                 
-                options.forEach(option => {
-                    const button = document.createElement('button');
-                    button.className = 'btn btn-outline-light option-btn';
-                    button.textContent = option;
-                    button.onclick = () => this.handleResponse(option, correctLetter);
-                    container.appendChild(button);
+                options.forEach((option, index) => {
+                    const optionDiv = document.createElement('div');
+                    optionDiv.className = 'letter-option';
+                    optionDiv.innerHTML = `
+                        <input type="radio" name="letter-choice" value="${option}" id="option-${index}" onchange="test.selectOption('${option}', this.parentElement)">
+                        <label for="option-${index}">${option}</label>
+                    `;
+                    container.appendChild(optionDiv);
                 });
+            }
+            
+            selectOption(letter, element) {
+                // Clear previous selections
+                document.querySelectorAll('.letter-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                
+                // Mark current selection
+                element.classList.add('selected');
+                this.selectedOption = letter;
+                
+                // Show submit button
+                document.getElementById('submit-btn').style.display = 'block';
+            }
+            
+            submitResponse() {
+                if (!this.selectedOption) {
+                    alert('Please select a letter before submitting.');
+                    return;
+                }
+                
+                const currentTest = this.testSequence[this.currentLetterIndex];
+                this.handleResponse(this.selectedOption, currentTest.letter);
             }
             
             handleResponse(selectedLetter, correctLetter) {
@@ -334,21 +435,27 @@
                 });
                 
                 // Provide visual feedback
-                const buttons = document.querySelectorAll('.option-btn');
-                buttons.forEach(btn => {
-                    if (btn.textContent === correctLetter) {
-                        btn.className = 'btn btn-success option-btn';
-                    } else if (btn.textContent === selectedLetter && !isCorrect) {
-                        btn.className = 'btn btn-danger option-btn';
+                const options = document.querySelectorAll('.letter-option');
+                options.forEach(opt => {
+                    const radio = opt.querySelector('input[type="radio"]');
+                    const label = opt.querySelector('label');
+                    
+                    if (label.textContent === correctLetter) {
+                        opt.classList.add('correct');
+                    } else if (label.textContent === selectedLetter && !isCorrect) {
+                        opt.classList.add('incorrect');
                     }
-                    btn.disabled = true;
+                    radio.disabled = true;
                 });
+                
+                // Disable submit button
+                document.getElementById('submit-btn').disabled = true;
                 
                 // Move to next letter after delay
                 setTimeout(() => {
                     this.currentLetterIndex++;
                     this.showCurrentLetter();
-                }, 1000);
+                }, 1500);
             }
             
             completeTest() {
@@ -448,7 +555,7 @@
                             </div>
                             
                             <div class="mt-4">
-                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:8000/patient'">
+                                <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:5000/patient'">
                                     <i class="fas fa-arrow-left me-2"></i>
                                     Back to Tests
                                 </button>
@@ -487,7 +594,7 @@
         
         function exitTest() {
             if (confirm('Are you sure you want to exit this test?')) {
-                window.location.href = 'http://' + window.location.hostname + ':8000/patient';
+                window.location.href = 'http://' + window.location.hostname + ':5000/patient';
             }
         }
         
@@ -495,11 +602,6 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 exitTest();
-            } else if (e.key >= '1' && e.key <= '4' && test) {
-                const options = document.querySelectorAll('.option-btn');
-                if (options[parseInt(e.key) - 1]) {
-                    options[parseInt(e.key) - 1].click();
-                }
             }
         });
     </script>
