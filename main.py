@@ -252,6 +252,17 @@ def handle_stop_screen_mirror(data):
     socketio.emit('stop_screen_capture', data, to=patient_room)
     socketio.emit('mirror_session_stopped', data, to=doctor_room)
 
+@socketio.on('screen_capture_data')
+def handle_screen_capture_data(data):
+    """Handle screen capture data from patient for doctor mirroring"""
+    logging.info("Received screen capture data from patient")
+    # Forward image data to doctor as mirror frame
+    socketio.emit('mirror_frame', {
+        'frame': data.get('image', '').replace('data:image/jpeg;base64,', ''),
+        'timestamp': data.get('timestamp', int(time.time() * 1000)),
+        'patient': data.get('patient', 'unknown')
+    }, to=doctor_room)
+
 # Add test routes to serve tests directly from main app
 @app.route('/test/<test_name>')
 def run_test(test_name):

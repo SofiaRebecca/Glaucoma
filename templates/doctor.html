@@ -201,7 +201,7 @@
         const socket = io();
         let currentPatient = '';
         let syncEnabled = false;
-		let mirroring = false; // Track mirroring status
+        let mirroring = false; // Track mirroring status
 
         // Join doctor room
         socket.emit('join_doctor');
@@ -239,206 +239,206 @@
         });
 
 		// Screen mirroring
-		const mirrorCanvas = document.getElementById('mirror-canvas');
-		const mirrorContext = mirrorCanvas ? mirrorCanvas.getContext('2d') : null; // Check if mirrorCanvas exists
-		const patientScreenImage = document.getElementById('patient-screen-image');
-		const mirrorPlaceholder = document.getElementById('mirror-placeholder');
+        const mirrorCanvas = document.getElementById('mirror-canvas');
+        const mirrorContext = mirrorCanvas ? mirrorCanvas.getContext('2d') : null;
+        const patientScreenImage = document.getElementById('patient-screen-image');
+        const mirrorPlaceholder = document.getElementById('mirror-placeholder');
 
-		// Start mirror button
-		document.getElementById('start-mirror-btn').addEventListener('click', function() {
-			socket.emit('doctor_command', { command: 'start_mirror' });
-			document.getElementById('start-mirror-btn').style.display = 'none';
-			document.getElementById('stop-mirror-btn').style.display = 'inline-block';
-			mirroring = true;
-			if (mirrorPlaceholder) {
-				mirrorPlaceholder.style.display = 'none';
-			}
+        // Start mirror button
+        document.getElementById('start-mirror-btn').addEventListener('click', function() {
+            socket.emit('doctor_command', { command: 'start_mirror' });
+            document.getElementById('start-mirror-btn').style.display = 'none';
+            document.getElementById('stop-mirror-btn').style.display = 'inline-block';
+            mirroring = true;
+            if (mirrorPlaceholder) {
+                mirrorPlaceholder.style.display = 'none';
+            }
 
-			// Show appropriate canvas based on test type
-			if (currentVisualFieldState) {
-				if (visualFieldCanvas) visualFieldCanvas.style.display = 'block';
-			} else {
-				if (patientScreenImage) patientScreenImage.style.display = 'block';
-			}
-		});
+            // Show appropriate canvas based on test type
+            if (currentVisualFieldState) {
+                if (visualFieldCanvas) visualFieldCanvas.style.display = 'block';
+            } else {
+                if (patientScreenImage) patientScreenImage.style.display = 'block';
+            }
+        });
 
 		// Stop mirror button
-		document.getElementById('stop-mirror-btn').addEventListener('click', function() {
-			socket.emit('doctor_command', { command: 'stop_mirror' });
-			document.getElementById('start-mirror-btn').style.display = 'inline-block';
-			document.getElementById('stop-mirror-btn').style.display = 'none';
-			mirroring = false;
-			currentVisualFieldState = null;
-			if (mirrorPlaceholder) {
-				mirrorPlaceholder.style.display = 'block';
-			}
-			if (patientScreenImage) {
-				patientScreenImage.style.display = 'none';
-			}
-			if (visualFieldCanvas) {
-				visualFieldCanvas.style.display = 'none';
-			}
-			// Clear canvases
-			if (mirrorContext && mirrorCanvas) {
+        document.getElementById('stop-mirror-btn').addEventListener('click', function() {
+            socket.emit('doctor_command', { command: 'stop_mirror' });
+            document.getElementById('start-mirror-btn').style.display = 'inline-block';
+            document.getElementById('stop-mirror-btn').style.display = 'none';
+            mirroring = false;
+            currentVisualFieldState = null;
+            if (mirrorPlaceholder) {
+                mirrorPlaceholder.style.display = 'block';
+            }
+            if (patientScreenImage) {
+                patientScreenImage.style.display = 'none';
+            }
+            if (visualFieldCanvas) {
+                visualFieldCanvas.style.display = 'none';
+            }
+            // Clear canvases
+            if (mirrorContext && mirrorCanvas) {
                 mirrorContext.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
             }
-			if (vfContext && visualFieldCanvas) {
-				vfContext.clearRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
-			}
-		});
+            if (vfContext && visualFieldCanvas) {
+                vfContext.clearRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
+            }
+        });
 
 		// Handle mirrored frame data
-		socket.on('mirror_frame', function(data) {
-			if (mirroring) {
-				// console.log("Received mirror frame");
-				if (patientScreenImage) {
-					patientScreenImage.src = 'data:image/jpeg;base64,' + data.frame; // Update the image source
-				}
-			}
-		});
+        socket.on('mirror_frame', function(data) {
+            if (mirroring) {
+                console.log("Received mirror frame");
+                if (patientScreenImage) {
+                    patientScreenImage.src = 'data:image/jpeg;base64,' + data.frame;
+                }
+            }
+        });
 
 		// Visual Field Test Mirroring
-		const visualFieldCanvas = document.getElementById('visual-field-mirror');
-		const vfContext = visualFieldCanvas ? visualFieldCanvas.getContext('2d') : null;
-		let currentVisualFieldState = null;
+        const visualFieldCanvas = document.getElementById('visual-field-mirror');
+        const vfContext = visualFieldCanvas ? visualFieldCanvas.getContext('2d') : null;
+        let currentVisualFieldState = null;
 
-		// Handle visual field screen updates
-		socket.on('screen_update', function(data) {
-			console.log('Visual field screen update:', data);
-			currentVisualFieldState = data;
-			if (vfContext && mirroring) {
-				drawVisualFieldMirror(data);
-				// Show visual field canvas instead of regular mirror
-				if (visualFieldCanvas) {
-					visualFieldCanvas.style.display = 'block';
-					if (patientScreenImage) patientScreenImage.style.display = 'none';
-					if (mirrorCanvas) mirrorCanvas.style.display = 'none';
-				}
-			}
-		});
+        // Handle visual field screen updates
+        socket.on('screen_update', function(data) {
+            console.log('Visual field screen update:', data);
+            currentVisualFieldState = data;
+            if (vfContext && mirroring) {
+                drawVisualFieldMirror(data);
+                // Show visual field canvas instead of regular mirror
+                if (visualFieldCanvas) {
+                    visualFieldCanvas.style.display = 'block';
+                    if (patientScreenImage) patientScreenImage.style.display = 'none';
+                    if (mirrorCanvas) mirrorCanvas.style.display = 'none';
+                }
+            }
+        });
 
-		// When doctor connects, request current screen state from patient
-		socket.on('connect', function() {
-			console.log('Doctor connected, requesting patient screen state');
-			socket.emit('doctor_joined', { test_type: 'visual_field' });
-		});
+        // When doctor connects, request current screen state from patient
+        socket.on('connect', function() {
+            console.log('Doctor connected, requesting patient screen state');
+            socket.emit('doctor_joined', { test_type: 'visual_field' });
+        });
 
 		function drawVisualFieldMirror(data) {
-			if (!vfContext || !data) return;
+            if (!vfContext || !data) return;
 
-			// Clear canvas
-			vfContext.fillStyle = '#222';
-			vfContext.fillRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
+            // Clear canvas
+            vfContext.fillStyle = '#222';
+            vfContext.fillRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
 
-			// Draw screen state overlay
-			vfContext.fillStyle = '#00ff00';
-			vfContext.font = '14px Arial';
-			vfContext.textAlign = 'left';
-			vfContext.fillText(`Screen: ${data.screen || 'unknown'}`, 10, 25);
-			
-			if (data.progress) {
-				vfContext.fillText(`Progress: ${data.progress.current}/${data.progress.total} (${data.progress.seen} seen)`, 10, 45);
-			}
+            // Draw screen state overlay
+            vfContext.fillStyle = '#00ff00';
+            vfContext.font = '14px Arial';
+            vfContext.textAlign = 'left';
+            vfContext.fillText('Screen: ' + (data.screen || 'unknown'), 10, 25);
+            
+            if (data.progress) {
+                vfContext.fillText('Progress: ' + data.progress.current + '/' + data.progress.total + ' (' + data.progress.seen + ' seen)', 10, 45);
+            }
 
-			// Handle different screen states
-			switch (data.screen) {
-				case 'instructions':
-					vfContext.fillStyle = '#ffffff';
-					vfContext.font = '24px Arial';
-					vfContext.textAlign = 'center';
-					vfContext.fillText('Instructions Screen', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
-					break;
-				
-				case 'starting':
-					vfContext.fillStyle = '#ffff00';
-					vfContext.font = '24px Arial';
-					vfContext.textAlign = 'center';
-					vfContext.fillText('Test Starting...', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
-					break;
-				
-				case 'test':
-					// Draw fixation cross if present
-					if (data.fixation) {
-						vfContext.fillStyle = '#ff0000';
-						vfContext.font = 'bold 32px monospace';
-						vfContext.textAlign = 'center';
-						vfContext.textBaseline = 'middle';
-						vfContext.fillText('+', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
-					}
+            // Handle different screen states
+            switch (data.screen) {
+                case 'instructions':
+                    vfContext.fillStyle = '#ffffff';
+                    vfContext.font = '24px Arial';
+                    vfContext.textAlign = 'center';
+                    vfContext.fillText('Instructions Screen', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+                    break;
+                
+                case 'starting':
+                    vfContext.fillStyle = '#ffff00';
+                    vfContext.font = '24px Arial';
+                    vfContext.textAlign = 'center';
+                    vfContext.fillText('Test Starting...', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+                    break;
+                
+                case 'test':
+                    // Draw fixation cross if present
+                    if (data.fixation) {
+                        vfContext.fillStyle = '#ff0000';
+                        vfContext.font = 'bold 32px monospace';
+                        vfContext.textAlign = 'center';
+                        vfContext.textBaseline = 'middle';
+                        vfContext.fillText('+', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+                    }
 
-					// Draw stimulus if visible
-					if (data.stimulus && data.stimulus.visible) {
-						const stimulus = data.stimulus;
-						// Scale coordinates to canvas size (assuming 800x600 patient screen)
-						const scaleX = visualFieldCanvas.width / 800;
-						const scaleY = visualFieldCanvas.height / 600;
-						
-						const x = (stimulus.x || 0) * scaleX;
-						const y = (stimulus.y || 0) * scaleY;
-						
-						vfContext.fillStyle = `rgba(255, 255, 255, ${stimulus.intensity || 1})`;
-						vfContext.beginPath();
-						vfContext.arc(x, y, 8, 0, 2 * Math.PI);
-						vfContext.fill();
+                    // Draw stimulus if visible
+                    if (data.stimulus && data.stimulus.visible) {
+                        var stimulus = data.stimulus;
+                        // Scale coordinates to canvas size (assuming 800x600 patient screen)
+                        var scaleX = visualFieldCanvas.width / 800;
+                        var scaleY = visualFieldCanvas.height / 600;
+                        
+                        var x = (stimulus.x || 0) * scaleX;
+                        var y = (stimulus.y || 0) * scaleY;
+                        
+                        vfContext.fillStyle = 'rgba(255, 255, 255, ' + (stimulus.intensity || 1) + ')';
+                        vfContext.beginPath();
+                        vfContext.arc(x, y, 8, 0, 2 * Math.PI);
+                        vfContext.fill();
 
-						// Add point info overlay
-						vfContext.fillStyle = '#00ff00';
-						vfContext.font = '12px Arial';
-						vfContext.textAlign = 'left';
-						vfContext.fillText(`Point ${stimulus.pointId || 0}`, x + 15, y - 10);
-						vfContext.fillText(`Intensity: ${((stimulus.intensity || 1) * 100).toFixed(0)}%`, x + 15, y + 5);
-					}
-					break;
-				
-				case 'results':
-					vfContext.fillStyle = '#00ff00';
-					vfContext.font = '24px Arial';
-					vfContext.textAlign = 'center';
-					vfContext.fillText('Test Complete', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 - 40);
-					
-					if (data.results) {
-						vfContext.font = '16px Arial';
-						vfContext.fillText(`Detection Rate: ${data.results.detection_rate}%`, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
-						vfContext.fillText(`Duration: ${data.results.duration}s`, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 + 20);
-						vfContext.fillText(`Reliability: ${data.results.reliability_score}`, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 + 40);
-					}
-					break;
-				
-				default:
-					vfContext.fillStyle = '#888';
-					vfContext.font = '18px Arial';
-					vfContext.textAlign = 'center';
-					vfContext.fillText('Patient Activity', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
-			}
+                        // Add point info overlay
+                        vfContext.fillStyle = '#00ff00';
+                        vfContext.font = '12px Arial';
+                        vfContext.textAlign = 'left';
+                        vfContext.fillText('Point ' + (stimulus.pointId || 0), x + 15, y - 10);
+                        vfContext.fillText('Intensity: ' + ((stimulus.intensity || 1) * 100).toFixed(0) + '%', x + 15, y + 5);
+                    }
+                    break;
+                
+                case 'results':
+                    vfContext.fillStyle = '#00ff00';
+                    vfContext.font = '24px Arial';
+                    vfContext.textAlign = 'center';
+                    vfContext.fillText('Test Complete', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 - 40);
+                    
+                    if (data.results) {
+                        vfContext.font = '16px Arial';
+                        vfContext.fillText('Detection Rate: ' + data.results.detection_rate + '%', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+                        vfContext.fillText('Duration: ' + data.results.duration + 's', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 + 20);
+                        vfContext.fillText('Reliability: ' + data.results.reliability_score, visualFieldCanvas.width / 2, visualFieldCanvas.height / 2 + 40);
+                    }
+                    break;
+                
+                default:
+                    vfContext.fillStyle = '#888';
+                    vfContext.font = '18px Arial';
+                    vfContext.textAlign = 'center';
+                    vfContext.fillText('Patient Activity', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+            }
 
-			// Add timestamp
-			vfContext.fillStyle = '#888';
-			vfContext.font = '10px Arial';
-			vfContext.textAlign = 'right';
-			vfContext.fillText(`Updated: ${new Date(data.timestamp).toLocaleTimeString()}`, visualFieldCanvas.width - 10, 20);
-		}
+            // Add timestamp
+            vfContext.fillStyle = '#888';
+            vfContext.font = '10px Arial';
+            vfContext.textAlign = 'right';
+            vfContext.fillText('Updated: ' + new Date(data.timestamp).toLocaleTimeString(), visualFieldCanvas.width - 10, 20);
+        }
 
 		// Mouse click event handling
-		const patientScreenMirror = document.getElementById('patient-screen-mirror');
-		if (patientScreenMirror) {
-			patientScreenMirror.addEventListener('click', function(event) {
-				if (mirroring) {
-					const rect = patientScreenMirror.getBoundingClientRect();
-					const x = event.clientX - rect.left;
-					const y = event.clientY - rect.top;
+        const patientScreenMirror = document.getElementById('patient-screen-mirror');
+        if (patientScreenMirror) {
+            patientScreenMirror.addEventListener('click', function(event) {
+                if (mirroring) {
+                    const rect = patientScreenMirror.getBoundingClientRect();
+                    const x = event.clientX - rect.left;
+                    const y = event.clientY - rect.top;
 
-					console.log('Click coordinates:', x, y);
+                    console.log('Click coordinates:', x, y);
 
-					socket.emit('doctor_command', {
-						command: 'mouse_click',
-						x: x,
-						y: y,
-						width: rect.width,
-						height: rect.height
-					});
-				}
-			});
-		}
+                    socket.emit('doctor_command', {
+                        command: 'mouse_click',
+                        x: x,
+                        y: y,
+                        width: rect.width,
+                        height: rect.height
+                    });
+                }
+            });
+        }
 
         function updatePatientActivity(data) {
             const activityDisplay = document.getElementById('patient-activity-display');
