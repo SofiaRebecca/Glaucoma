@@ -323,7 +323,11 @@
 
                 const letterDisplay = document.getElementById('letter-display');
                 letterDisplay.textContent = currentTest.letter;
-                letterDisplay.style.color = `rgba(255, 255, 255, ${currentTest.contrast / 100})`;
+                
+                // Improved visibility calculation - ensure letters are always visible
+                const visibility = Math.max(0.3, currentTest.contrast / 100);
+                letterDisplay.style.color = `rgba(255, 255, 255, ${visibility})`;
+                letterDisplay.style.textShadow = `0 0 10px rgba(255, 255, 255, ${visibility * 0.5})`;
 
                 this.showOptions(currentTest.options, currentTest.letter);
                 document.getElementById('submit-btn').style.display = 'none';
@@ -389,16 +393,6 @@
                         }
                     });
                 }
-            }
-
-            submitResponse() {
-                if (!this.selectedOption) {
-                    alert('Please select a letter before submitting.');
-                    return;
-                }
-                
-                const currentTest = this.testSequence[this.currentLetterIndex];
-                this.handleResponse(this.selectedOption, currentTest.letter);
             }
 
             handleResponse(selectedLetter, correctLetter) {
