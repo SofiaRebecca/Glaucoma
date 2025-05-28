@@ -599,17 +599,43 @@
 
                 document.querySelector('.test-area').appendChild(this.currentStimulus);
 
+                // Emit screen update to doctor
+                if (this.socket) {
+                    this.socket.emit('screen_update', {
+                        fixation: true,
+                        stimulus: {
+                            x: point.x,
+                            y: point.y,
+                            visible: true,
+                            intensity: intensity,
+                            pointId: this.currentPoint
+                        },
+                        timestamp: this.stimulusStartTime,
+                        patient: this.patientName
+                    });
+                }
+
                 // Auto-hide stimulus after 500ms
                 setTimeout(() => {
-                    if (this.stimulusActive && !this.responseReceived) {
-                        this.handleResponse(false);
+                    if (this.currentStimulus && this.currentStimulus.parentNode) {
+                        this.currentStimulus.remove();
+                        this.currentStimulus = null;
+                    }
+                    // Emit stimulus hidden to doctor
+                    if (this.socket) {
+                        this.socket.emit('screen_update', {
+                            fixation: true,
+                            stimulus: { visible: false },
+                            timestamp: Date.now(),
+                            patient: this.patientName
+                        });
                     }
                 }, 500);
 
-                // Auto-timeout after 1500ms (no response window)
+                // Auto-timeout response window after 1500ms
                 setTimeout(() => {
-                    if (this.stimulusActive && !this.responseReceived) {
-                        this.stimulusActive = false;
+                    if (!this.responseReceived && this.stimulusStartTime) {
+                        this.handleResponse(false);
                     }
                 }, 1500);
             }
@@ -621,10 +647,10 @@
             }
 
             handleGlobalClick() {
-                if (this.stimulusActive && !this.responseReceived && this.stimulusStartTime) {
+                if (this.stimulusStartTime && !this.responseReceived) {
                     const responseTime = Date.now() - this.stimulusStartTime;
-                    // Accept any click within 1500ms of stimulus appearing as "seen"
-                    if (responseTime >= 10 && responseTime <= 1500) {
+                    // Accept any click within 50-1500ms of stimulus appearing as "seen"
+                    if (responseTime >= 50 && responseTime <= 1500) {
                         this.handleResponse(true);
                         return true;
                     }
@@ -992,12 +1018,24 @@
 
         // Global click handler for stimulus detection
         document.addEventListener('click', function(e) {
-            if (test && test.testActive && test.stimulusActive) {
+            if (test && test.testActive) {
                 e.preventDefault();
                 e.stopPropagation();
                 const handled = test.handleGlobalClick();
                 if (handled) {
                     console.log('Valid click registered - Points seen:', test.pointsSeen);
+                }
+            }
+        }, true);
+
+        // Also handle touch events for mobile
+        document.addEventListener('touchstart', function(e) {
+            if (test && test.testActive) {
+                e.preventDefault();
+                e.stopPropagation();
+                const handled = test.handleGlobalClick();
+                if (handled) {
+                    console.log('Valid touch registered - Points seen:', test.pointsSeen);
                 }
             }
         }, true);

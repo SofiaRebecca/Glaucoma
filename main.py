@@ -221,6 +221,17 @@ def handle_doctor_remote_scroll(data):
     """Handle doctor remote scroll on patient screen"""
     socketio.emit('remote_scroll_command', data, to=patient_room)
 
+@socketio.on('screen_update')
+def handle_screen_update(data):
+    """Handle visual field screen updates from patient for doctor mirroring"""
+    logging.info(f"Visual field screen update: {data}")
+    
+    # Forward screen state to doctor room for real-time mirroring
+    socketio.emit('screen_update', {
+        **data,
+        'timestamp': data.get('timestamp', int(time.time() * 1000))
+    }, to=doctor_room)
+
 @socketio.on('start_screen_mirror')
 def handle_start_screen_mirror(data):
     """Start screen mirroring session"""

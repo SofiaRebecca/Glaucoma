@@ -162,7 +162,8 @@
                                 <p class="small">Click "Start Mirror" to begin screen sharing</p>
                             </div>
                             <img id="patient-screen-image" style="display: none; max-width: 100%; max-height: 400px; cursor: crosshair;" />
-                            <canvas id="mirror-canvas" style="display: none; max-width: 100%; max-height: 400px; cursor: crosshair; border: 1px solid #333;"></canvas>
+                            <canvas id="mirror-canvas" width="600" height="400" style="display: none; max-width: 100%; max-height: 400px; cursor: crosshair; border: 1px solid #333; background: #222;"></canvas>
+                            <canvas id="visual-field-mirror" width="600" height="400" style="display: none; max-width: 100%; max-height: 400px; border: 1px solid #333; background: #222;"></canvas>
                         </div>
                         <div class="mt-2 text-center">
                             <small class="text-muted">Click on the mirrored screen to control patient device</small>
@@ -253,8 +254,11 @@
 				mirrorPlaceholder.style.display = 'none';
 			}
 
-			if (patientScreenImage) {
-				patientScreenImage.style.display = 'block'; // Show the image element
+			// Show appropriate canvas based on test type
+			if (currentVisualFieldState) {
+				if (visualFieldCanvas) visualFieldCanvas.style.display = 'block';
+			} else {
+				if (patientScreenImage) patientScreenImage.style.display = 'block';
 			}
 		});
 
@@ -264,17 +268,23 @@
 			document.getElementById('start-mirror-btn').style.display = 'inline-block';
 			document.getElementById('stop-mirror-btn').style.display = 'none';
 			mirroring = false;
+			currentVisualFieldState = null;
 			if (mirrorPlaceholder) {
 				mirrorPlaceholder.style.display = 'block';
 			}
 			if (patientScreenImage) {
-				patientScreenImage.style.display = 'none'; // Hide the image element
+				patientScreenImage.style.display = 'none';
 			}
-			// Clear canvas
+			if (visualFieldCanvas) {
+				visualFieldCanvas.style.display = 'none';
+			}
+			// Clear canvases
 			if (mirrorContext && mirrorCanvas) {
                 mirrorContext.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
             }
-
+			if (vfContext && visualFieldCanvas) {
+				vfContext.clearRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
+			}
 		});
 
 		// Handle mirrored frame data
@@ -286,6 +296,72 @@
 				}
 			}
 		});
+
+		// Visual Field Test Mirroring
+		const visualFieldCanvas = document.getElementById('visual-field-mirror');
+		const vfContext = visualFieldCanvas ? visualFieldCanvas.getContext('2d') : null;
+		let currentVisualFieldState = null;
+
+		// Handle visual field screen updates
+		socket.on('screen_update', function(data) {
+			console.log('Visual field screen update:', data);
+			currentVisualFieldState = data;
+			if (vfContext) {
+				drawVisualFieldMirror(data);
+				// Show visual field canvas instead of regular mirror
+				if (visualFieldCanvas) {
+					visualFieldCanvas.style.display = 'block';
+					if (patientScreenImage) patientScreenImage.style.display = 'none';
+					if (mirrorCanvas) mirrorCanvas.style.display = 'none';
+				}
+			}
+		});
+
+		function drawVisualFieldMirror(data) {
+			if (!vfContext || !data) return;
+
+			// Clear canvas
+			vfContext.fillStyle = '#222';
+			vfContext.fillRect(0, 0, visualFieldCanvas.width, visualFieldCanvas.height);
+
+			// Draw fixation cross if present
+			if (data.fixation) {
+				vfContext.fillStyle = '#ff0000';
+				vfContext.font = 'bold 32px monospace';
+				vfContext.textAlign = 'center';
+				vfContext.textBaseline = 'middle';
+				vfContext.fillText('+', visualFieldCanvas.width / 2, visualFieldCanvas.height / 2);
+			}
+
+			// Draw stimulus if visible
+			if (data.stimulus && data.stimulus.visible) {
+				const stimulus = data.stimulus;
+				// Scale coordinates to canvas size
+				const scaleX = visualFieldCanvas.width / window.screen.width;
+				const scaleY = visualFieldCanvas.height / window.screen.height;
+				
+				const x = (stimulus.x || 0) * scaleX;
+				const y = (stimulus.y || 0) * scaleY;
+				
+				vfContext.fillStyle = `rgba(255, 255, 255, ${stimulus.intensity || 1})`;
+				vfContext.beginPath();
+				vfContext.arc(x, y, 8, 0, 2 * Math.PI);
+				vfContext.fill();
+
+				// Add point info overlay
+				vfContext.fillStyle = '#00ff00';
+				vfContext.font = '12px Arial';
+				vfContext.textAlign = 'left';
+				vfContext.fillText(`Point ${stimulus.pointId || 0}`, x + 15, y - 10);
+				vfContext.fillText(`Intensity: ${((stimulus.intensity || 1) * 100).toFixed(0)}%`, x + 15, y + 5);
+			}
+
+			// Add timestamp
+			vfContext.fillStyle = '#888';
+			vfContext.font = '10px Arial';
+			vfContext.textAlign = 'right';
+			vfContext.fillText(`Updated: ${new Date(data.timestamp).toLocaleTimeString()}`, visualFieldCanvas.width - 10, 20);
+		}
 
 		// Mouse click event handling
 		const patientScreenMirror = document.getElementById('patient-screen-mirror');
