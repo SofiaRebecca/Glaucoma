@@ -281,6 +281,8 @@
                 this.isDetecting = false;
                 this.detectionPoints = [];
                 this.shapeStartTime = null;
+                this.autoAdvanceTimeout = null;
+                this.isTestRunning = false;
 
                 // Test parameters
                 this.contrastLevels = [1.0, 0.8, 0.6, 0.4, 0.3, 0.2];
@@ -290,27 +292,19 @@
                 this.initializeCanvas();
             }
 
-            initializeCanvas() {
-                this.canvas = document.getElementById('edge-canvas');
-                this.ctx = this.canvas.getContext('2d');
-
-                // Add mouse event listeners
-                this.canvas.addEventListener('mousedown', (e) => this.startDetection(e));
-                this.canvas.addEventListener('mousemove', (e) => this.continueDetection(e));
-                this.canvas.addEventListener('mouseup', (e) => this.endDetection(e));
-                this.canvas.addEventListener('click', (e) => this.handleClick(e));
+            stopTest() {
+                this.isTestRunning = false;
+                if (this.autoAdvanceTimeout) {
+                    clearTimeout(this.autoAdvanceTimeout);
+                    this.autoAdvanceTimeout = null;
+                }
             }
 
             start() {
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('test-container').style.display = 'flex';
                 this.startTime = new Date();
-                
-                // Show mobile fullscreen button during test
-                if (isMobileDevice()) {
-                    document.getElementById('test-fullscreen-fab').style.display = 'block';
-                }
-                
+                this.isTestRunning = true;
                 this.nextShape();
             }
 
@@ -727,6 +721,9 @@
 
         function exitTest() {
             if (confirm('Are you sure you want to exit this test?')) {
+                if (test) {
+                    test.stopTest();
+                }
                 window.location.href = 'http://' + window.location.hostname + ':8000/patient';
             }
         }

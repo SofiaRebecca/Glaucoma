@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -15,7 +14,7 @@
             margin: 0;
             padding: 0;
         }
-        
+
         .test-container {
             position: fixed;
             top: 0;
@@ -27,7 +26,7 @@
             justify-content: center;
             flex-direction: column;
         }
-        
+
         .letter-display {
             font-family: 'Courier New', monospace;
             font-size: 120px;
@@ -37,7 +36,7 @@
             filter: contrast(1);
             transition: filter 0.3s ease;
         }
-        
+
         .options-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -45,7 +44,7 @@
             margin-bottom: 20px;
             max-width: 400px;
         }
-        
+
         .letter-option {
             display: flex;
             align-items: center;
@@ -63,12 +62,12 @@
             position: relative;
             padding: 15px;
         }
-        
+
         .letter-option:hover {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.6);
         }
-        
+
         .letter-option input[type="radio"] {
             position: absolute;
             opacity: 0;
@@ -77,22 +76,22 @@
             margin: 0;
             cursor: pointer;
         }
-        
+
         .letter-option.selected {
             background: rgba(0, 123, 255, 0.3);
             border-color: #007bff;
         }
-        
+
         .letter-option.correct {
             background: rgba(40, 167, 69, 0.5);
             border-color: #28a745;
         }
-        
+
         .letter-option.incorrect {
             background: rgba(220, 53, 69, 0.5);
             border-color: #dc3545;
         }
-        
+
         .instructions {
             position: fixed;
             top: 50%;
@@ -104,14 +103,14 @@
             border-radius: 10px;
             max-width: 600px;
         }
-        
+
         .language-toggle {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1000;
         }
-        
+
         .test-info {
             position: fixed;
             top: 20px;
@@ -121,7 +120,7 @@
             border-radius: 5px;
             font-size: 14px;
         }
-        
+
         .exit-btn {
             position: fixed;
             bottom: 20px;
@@ -133,7 +132,7 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        
+
         .contrast-info {
             position: fixed;
             bottom: 20px;
@@ -197,23 +196,23 @@
             Start Test
         </button>
     </div>
-    
+
     <div id="test-container" class="test-container" style="display: none;">
         <div class="test-info">
             <div>Letter: <span id="current-letter">0</span> / 80</div>
             <div>Correct: <span id="correct-count">0</span></div>
             <div>Language: <span id="current-language">English</span></div>
         </div>
-        
+
         <div class="language-toggle">
             <div class="btn-group" role="group">
                 <button type="button" class="btn btn-outline-light btn-sm" id="test-english-btn" onclick="switchLanguage('english')">English</button>
                 <button type="button" class="btn btn-outline-light btn-sm" id="test-kannada-btn" onclick="switchLanguage('kannada')">ಕನ್ನಡ</button>
             </div>
         </div>
-        
+
         <div id="letter-display" class="letter-display">C</div>
-        
+
         <form id="letter-form">
             <div class="options-container" id="options-container">
                 <!-- Options will be generated dynamically -->
@@ -223,11 +222,11 @@
                 Submit
             </button>
         </form>
-        
+
         <div class="contrast-info">
             Contrast Level: <span id="contrast-level">100%</span>
         </div>
-        
+
         <button class="exit-btn" onclick="exitTest()">
             <i class="fas fa-times"></i> Exit
         </button>
@@ -246,16 +245,16 @@
                 this.currentLanguage = 'english';
                 this.testStartTime = null;
                 this.selectedOption = null;
-                
+
                 this.letterSets = {
                     english: ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S'],
                     kannada: ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಎ', 'ಏ']
                 };
-                
+
                 this.contrastLevels = [100, 80, 60, 40, 20, 10, 5, 2.5, 1.25, 0.625];
                 this.generateTestSequence();
             }
-            
+
             generateTestSequence() {
                 this.testSequence = [];
                 for (let contrast of this.contrastLevels) {
@@ -269,7 +268,7 @@
                 }
                 this.shuffleArray(this.testSequence);
             }
-            
+
             generateOptions(correctLetter) {
                 const letterSet = this.letterSets[this.currentLanguage];
                 const options = [correctLetter];
@@ -282,14 +281,14 @@
                 this.shuffleArray(options);
                 return options;
             }
-            
+
             shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [array[i], array[j]] = [array[j], array[i]];
                 }
             }
-            
+
             setLanguage(language) {
                 this.currentLanguage = language;
                 document.getElementById('english-btn').className = 
@@ -299,40 +298,40 @@
                 document.getElementById('start-btn').disabled = false;
                 this.generateTestSequence();
             }
-            
+
             start() {
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('test-container').style.display = 'flex';
                 this.startTime = new Date();
                 this.showCurrentLetter();
             }
-            
+
             showCurrentLetter() {
                 if (this.currentLetterIndex >= this.testSequence.length) {
                     this.completeTest();
                     return;
                 }
-                
+
                 const currentTest = this.testSequence[this.currentLetterIndex];
                 this.testStartTime = Date.now();
                 this.selectedOption = null;
-                
+
                 document.getElementById('current-letter').textContent = this.currentLetterIndex + 1;
                 document.getElementById('correct-count').textContent = this.correctCount;
                 document.getElementById('contrast-level').textContent = currentTest.contrast + '%';
-                
+
                 const letterDisplay = document.getElementById('letter-display');
                 letterDisplay.textContent = currentTest.letter;
                 letterDisplay.style.color = `rgba(255, 255, 255, ${currentTest.contrast / 100})`;
-                
+
                 this.showOptions(currentTest.options, currentTest.letter);
                 document.getElementById('submit-btn').style.display = 'none';
             }
-            
+
             showOptions(options, correctLetter) {
                 const container = document.getElementById('options-container');
                 container.innerHTML = '';
-                
+
                 options.forEach((option, index) => {
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'letter-option';
@@ -343,7 +342,7 @@
                     container.appendChild(optionDiv);
                 });
             }
-            
+
             selectOption(letter, element) {
                 document.querySelectorAll('.letter-option').forEach(opt => {
                     opt.classList.remove('selected');
@@ -352,7 +351,7 @@
                 this.selectedOption = letter;
                 document.getElementById('submit-btn').style.display = 'block';
             }
-            
+
             submitResponse() {
                 if (!this.selectedOption) {
                     alert('Please select a letter before submitting.');
@@ -361,14 +360,14 @@
                 const currentTest = this.testSequence[this.currentLetterIndex];
                 this.handleResponse(this.selectedOption, currentTest.letter);
             }
-            
+
             handleResponse(selectedLetter, correctLetter) {
                 const responseTime = Date.now() - this.testStartTime;
                 const isCorrect = selectedLetter === correctLetter;
                 const currentTest = this.testSequence[this.currentLetterIndex];
-                
+
                 if (isCorrect) this.correctCount++;
-                
+
                 this.responses.push({
                     letterIndex: this.currentLetterIndex,
                     correctLetter: correctLetter,
@@ -379,12 +378,12 @@
                     responseTime: responseTime,
                     timestamp: new Date()
                 });
-                
+
                 const options = document.querySelectorAll('.letter-option');
                 options.forEach(opt => {
                     const radio = opt.querySelector('input[type="radio"]');
                     const label = opt.querySelector('label');
-                    
+
                     if (label.textContent === correctLetter) {
                         opt.classList.add('correct');
                     } else if (label.textContent === selectedLetter && !isCorrect) {
@@ -392,19 +391,19 @@
                     }
                     radio.disabled = true;
                 });
-                
+
                 document.getElementById('submit-btn').disabled = true;
-                
+
                 setTimeout(() => {
                     this.currentLetterIndex++;
                     this.showCurrentLetter();
                 }, 1500);
             }
-            
+
             completeTest() {
                 const endTime = new Date();
                 const duration = Math.round((endTime - this.startTime) / 1000);
-                
+
                 const testData = {
                     patient_name: this.patientName,
                     duration: duration,
@@ -417,29 +416,45 @@
                     end_time: endTime.toLocaleTimeString(),
                     responses: this.responses
                 };
-                
+
                 this.saveResults(testData);
                 this.showResults(testData);
             }
-            
+
             saveResults(data) {
-                fetch('/api/save_test_result', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        test_name: 'csv1000',
-                        ...data
+                try {
+                    const testSerialize = JSON.stringify(data, null, 2);
+                    console.log('CSV1000 data to save:', testSerialize);
+
+                    fetch('/api/save_test_result', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: testSerialize
                     })
-                }).then(response => response.json())
-                .then(result => console.log('Results saved:', result))
-                .catch(error => console.error('Error saving results:', error));
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(result => {
+                        console.log('Results saved:', result);
+                    })
+                    .catch(error => {
+                        console.error('Error saving CSV1000 results:', error);
+                    });
+                } catch (serializeError) {
+                    console.error('CSV1000 data serialization error:', serializeError);
+                }
             }
-            
+
             showResults(data) {
                 const correctResponses = this.responses.filter(r => r.isCorrect);
                 const minContrast = correctResponses.length > 0 ? 
                     Math.min(...correctResponses.map(r => r.contrastLevel)) : 100;
-                
+
                 document.body.innerHTML = `
                     <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
                         <div class="text-center">
@@ -447,7 +462,7 @@
                                 <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
                                 <h2>CSV-1000 Test Completed</h2>
                             </div>
-                            
+
                             <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
                                 <div class="card-body">
                                     <h5 class="card-title">Test Results</h5>
@@ -470,7 +485,7 @@
                                             <small>Min Contrast</small>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="text-start">
                                         <h6>Contrast Sensitivity Analysis:</h6>
                                         <p class="text-muted">
@@ -486,7 +501,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="mt-4">
                                 <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='/patient'">
                                     <i class="fas fa-arrow-left me-2"></i>
@@ -501,30 +516,55 @@
                     </div>
                 `;
             }
+
+            switchLanguage(language) {
+                console.log(`Switching language to: ${language}`);
+
+                // Validate language
+                if (!this.letterSets[language]) {
+                    console.error(`Invalid language: ${language}`);
+                    return;
+                }
+
+                this.currentLanguage = language;
+
+                document.getElementById('test-english-btn').className = 
+                    language === 'english' ? 'btn btn-outline-light btn-sm active' : 'btn btn-outline-light btn-sm';
+                document.getElementById('test-kannada-btn').className = 
+                    language === 'kannada' ? 'btn btn-outline-light btn-sm active' : 'btn btn-outline-light btn-sm';
+                
+                document.getElementById('current-language').textContent = language;
+
+                this.generateTestSequence();
+                if (document.getElementById('test-container').style.display === 'flex') {
+                    this.showCurrentLetter();
+                }
+            }
+
         }
-        
+
         let test = null;
-        
+
         function setLanguage(language) {
             if (!test) test = new CSV1000Test();
             test.setLanguage(language);
         }
-        
+
         function startTest() {
             if (!test) test = new CSV1000Test();
             test.start();
         }
-        
+
         function exitTest() {
             if (confirm('Are you sure you want to exit this test?')) {
                 window.location.href = '/patient';
             }
         }
-        
+
         function submitResponse() {
             if (test) test.submitResponse();
         }
-        
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') exitTest();
         });

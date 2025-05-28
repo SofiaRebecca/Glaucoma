@@ -342,8 +342,32 @@
                 this.stimulusDuration = 200; // ms
                 this.contrastLevels = [1.0, 0.8, 0.6, 0.4, 0.3]; // Progressive difficulty
                 this.currentContrastIndex = 0;
+                this.stimulusTimeout = null;
+                this.isTestRunning = false;
+                this.boundKeyPress = null;
+                this.boundClick = null;
 
                 this.initializeTest();
+            }
+
+            stopTest() {
+                this.isTestRunning = false;
+                this.waitingForResponse = false;
+
+                if (this.stimulusTimeout) {
+                    clearTimeout(this.stimulusTimeout);
+                    this.stimulusTimeout = null;
+                }
+
+                // Remove event listeners
+                if (this.boundKeyPress) {
+                    document.removeEventListener('keydown', this.boundKeyPress);
+                }
+                if (this.boundClick) {
+                    document.removeEventListener('click', this.boundClick);
+                }
+
+                this.clearStimulus();
             }
 
             initializeTest() {
@@ -405,7 +429,7 @@
                 this.awaitingResponse = true;
 
                 // Auto-hide stimulus after duration
-                setTimeout(() => {
+                this.stimulusTimeout = setTimeout(() => {
                     if (this.currentStimulus) {
                         this.currentStimulus.classList.remove('visible');
                     }
@@ -493,6 +517,7 @@
 
                 this.awaitingResponse = false;
                 const responseTime = Date.now() - this.trialStartTime;
+
                 const isCorrect = selectedQuadrant === this.currentTargetQuadrant;
 
                 // Highlight selected quadrant
@@ -710,6 +735,104 @@
                     </div>
                 `;
             }
+
+            addEventListeners() {
+                // Remove existing listeners to prevent duplicates
+                if (this.boundKeyPress) {
+                    document.removeEventListener('keydown', this.boundKeyPress);
+                }
+                if (this.boundClick) {
+                    document.removeEventListener('click', this.boundClick);
+                }
+
+                // Bind and store references
+                this.boundKeyPress = this.handleKeyPress.bind(this);
+                this.boundClick = this.handleClick.bind(this);
+
+                // Add throttled listeners
+                this.throttledKeyPress = this.throttle(this.boundKeyPress, 100);
+                this.throttledClick = this.throttle(this.boundClick, 100);
+
+                document.addEventListener('keydown', this.throttledKeyPress);
+                document.addEventListener('click', this.throttledClick);
+            }
+
+            throttle(func, delay) {
+                let timeoutId;
+                let lastExecTime = 0;
+                return function (...args) {
+                    const currentTime = Date.now();
+
+                    if (currentTime - lastExecTime > delay) {
+                        func.apply(this, args);
+                        lastExecTime = currentTime;
+                    } else {
+                        clearTimeout(timeoutId);
+                        timeoutId = setTimeout(() => {
+                            func.apply(this, args);
+                            lastExecTime = Date.now();
+                        }, delay - (currentTime - lastExecTime));
+                    }
+                };
+            }
+
+            handleResponse(selectedQuadrant, isTimeout) {
+                if (!this.awaitingResponse) return;
+
+                this.awaitingResponse = false;
+                const responseTime = Date.now() - this.trialStartTime;
+
+                // Increase tolerance - allow response time of up to 5 seconds
+                if (responseTime > 5000) {
+                    console.log('Response too late:', responseTime);
+                    return; // Too late
+                }
+
+                const isCorrect = selectedQuadrant === this.currentTargetQuadrant;
+
+                // Highlight selected quadrant
+                if (selectedQuadrant) {
+                    const quadrantElement = document.querySelector(`.quadrant-${selectedQuadrant}`);
+                    quadrantElement.classList.add(isCorrect ? 'correct' : 'incorrect');
+                }
+
+                // Show correct quadrant if wrong or timeout
+                if (!isCorrect && !isTimeout) {
+                    const correctQuadrant = document.querySelector(`.quadrant-${this.currentTargetQuadrant}`);
+                    correctQuadrant.classList.add('correct');
+                }
+
+                // Update scores
+                this.quadrantScores[this.currentTargetQuadrant].total++;
+                if (isCorrect) {
+                    this.correctCount++;
+                    this.quadrantScores[this.currentTargetQuadrant].correct++;
+                }
+
+                // Record response
+                this.responses.push({
+                    trialIndex: this.currentTrial,
+                    targetQuadrant: this.currentTargetQuadrant,
+                    selectedQuadrant: selectedQuadrant,
+                    isCorrect: isCorrect,
+                    isTimeout: isTimeout,
+                    contrastLevel: this.contrastLevels[this.currentContrastIndex],
+                    responseTime: responseTime,
+                    timestamp: new Date()
+                });
+
+                // Show feedback
+                this.showFeedback(isCorrect, isTimeout);
+
+                // Update quadrant scores display
+                this.updateQuadrantScores();
+
+                // Move to next trial after delay
+                setTimeout(() => {
+                    this.currentTrial++;
+                    this.nextTrial();
+                }, 1500);
+            }
         }
 
         let test = null;
@@ -807,7 +930,7 @@
                 } else if (document.webkitExitFullscreen) {
                     document.webkitExitFullscreen();
                 } else if (document.mozCancelFullScreen) {
-                    document.mozCancelFullScreen();
+                    documentmozCancelFullScreen();
                 } else if (document.msExitFullscreen) {
                     document.msExitFullscreen();
                 }
