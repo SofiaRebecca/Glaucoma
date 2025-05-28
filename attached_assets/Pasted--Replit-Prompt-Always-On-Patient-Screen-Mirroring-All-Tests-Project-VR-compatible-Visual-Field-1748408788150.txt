@@ -1,0 +1,82 @@
+🔄 Replit Prompt: Always-On Patient Screen Mirroring (All Tests)
+Project: VR-compatible Visual Field Testing App (7 tests incl. Humphrey 24-2)
+
+❌ Current Issue
+Doctor view stays blank unless a test is actively running.
+
+If the doctor joins after test start or if patient is idle, nothing is mirrored.
+
+✅ Goal
+Ensure that the patient’s screen state (UI) is mirrored in real-time at all times:
+
+Even when test is not started yet.
+
+Even when patient is on start screen, break screen, pause, or result view.
+
+For all 7 test types (Humphrey, Screening, Kinetic, etc.).
+
+🔧 Implementation Steps
+Track currentScreenState on the patient side, update it anytime UI changes — even outside test:
+
+js
+Copy
+Edit
+let currentScreenState = {
+  screen: 'start', // or 'pause', 'stimulus', 'break', etc.
+  data: { /* relevant UI data like fixation point, stimulus, etc. */ },
+};
+Emit screen state every time currentScreenState changes:
+
+js
+Copy
+Edit
+function updateScreenState(state) {
+  currentScreenState = state;
+  socket.emit('screen_update', { ...state, test_type: currentTestType });
+}
+When the doctor connects, always request the current state:
+
+js
+Copy
+Edit
+socket.emit('doctor_joined', { test_type: 'humphrey' });
+On the patient side, respond immediately:
+
+js
+Copy
+Edit
+socket.on('doctor_joined', (data) => {
+  if (data.test_type === currentTestType) {
+    socket.emit('screen_update', currentScreenState);
+  }
+});
+On the server side:
+
+python
+Copy
+Edit
+@socketio.on('screen_update')
+def screen_update(data):
+    emit('render_screen', data, broadcast=True, include_self=False)
+In doctor view JS, always render:
+
+js
+Copy
+Edit
+socket.on('render_screen', (data) => {
+  renderDoctorView(data); // Update based on screen state, even if not test
+});
+💡 Notes
+Define a consistent screen state schema across all 7 tests for easier integration.
+
+Screens can include: 'start', 'instructions', 'test', 'pause', 'result', 'break'.
+
+🧪 Verify:
+ Doctor joins before test starts → sees “start” screen ✅
+
+ Doctor joins mid-test → sees current stimulus ✅
+
+ Doctor joins during pause → sees pause screen ✅
+
+ Doctor joins after test ends → sees results ✅
+
