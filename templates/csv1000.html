@@ -323,7 +323,7 @@
 
                 const letterDisplay = document.getElementById('letter-display');
                 letterDisplay.textContent = currentTest.letter;
-                
+
                 // Improved visibility calculation - ensure letters are always visible
                 const visibility = Math.max(0.3, currentTest.contrast / 100);
                 letterDisplay.style.color = `rgba(255, 255, 255, ${visibility})`;
@@ -630,7 +630,15 @@
         }
 
         function submitResponse() {
-            if (test) test.submitResponse();
+            if (!test) return;
+
+            if (!test.selectedOption) {
+                alert('Please select a letter before submitting.');
+                return;
+            }
+
+            const currentTest = test.testSequence[test.currentLetterIndex];
+            test.handleResponse(test.selectedOption, currentTest.letter);
         }
 
         document.addEventListener('keydown', function(e) {

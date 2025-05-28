@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
 <head>
@@ -15,7 +14,7 @@
             margin: 0;
             padding: 0;
         }
-        
+
         .test-container {
             position: fixed;
             top: 0;
@@ -27,7 +26,7 @@
             justify-content: center;
             flex-direction: column;
         }
-        
+
         .letter-display {
             font-family: 'Courier New', monospace;
             font-size: 120px;
@@ -37,7 +36,7 @@
             filter: contrast(1);
             transition: filter 0.3s ease;
         }
-        
+
         .options-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -45,7 +44,7 @@
             margin-bottom: 20px;
             max-width: 400px;
         }
-        
+
         .letter-option {
             display: flex;
             align-items: center;
@@ -63,12 +62,12 @@
             position: relative;
             padding: 15px;
         }
-        
+
         .letter-option:hover {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.6);
         }
-        
+
         .letter-option input[type="radio"] {
             position: absolute;
             opacity: 0;
@@ -77,22 +76,22 @@
             margin: 0;
             cursor: pointer;
         }
-        
+
         .letter-option.selected {
             background: rgba(0, 123, 255, 0.3);
             border-color: #007bff;
         }
-        
+
         .letter-option.correct {
             background: rgba(40, 167, 69, 0.5);
             border-color: #28a745;
         }
-        
+
         .letter-option.incorrect {
             background: rgba(220, 53, 69, 0.5);
             border-color: #dc3545;
         }
-        
+
         .instructions {
             position: fixed;
             top: 50%;
@@ -104,14 +103,14 @@
             border-radius: 10px;
             max-width: 600px;
         }
-        
+
         .language-toggle {
             position: fixed;
             top: 20px;
             right: 20px;
             z-index: 1000;
         }
-        
+
         .test-info {
             position: fixed;
             top: 20px;
@@ -121,7 +120,7 @@
             border-radius: 5px;
             font-size: 14px;
         }
-        
+
         .exit-btn {
             position: fixed;
             bottom: 20px;
@@ -133,7 +132,7 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        
+
         .contrast-info {
             position: fixed;
             bottom: 20px;
@@ -197,23 +196,23 @@
             Start Test
         </button>
     </div>
-    
+
     <div id="test-container" class="test-container" style="display: none;">
         <div class="test-info">
             <div>Letter: <span id="current-letter">0</span> / 80</div>
             <div>Correct: <span id="correct-count">0</span></div>
             <div>Language: <span id="current-language">English</span></div>
         </div>
-        
+
         <div class="language-toggle">
             <div class="btn-group" role="group">
                 <button type="button" class="btn btn-outline-light btn-sm" id="test-english-btn" onclick="switchLanguage('english')">English</button>
                 <button type="button" class="btn btn-outline-light btn-sm" id="test-kannada-btn" onclick="switchLanguage('kannada')">ಕನ್ನಡ</button>
             </div>
         </div>
-        
+
         <div id="letter-display" class="letter-display">C</div>
-        
+
         <form id="letter-form">
             <div class="options-container" id="options-container">
                 <!-- Options will be generated dynamically -->
@@ -223,11 +222,11 @@
                 Submit
             </button>
         </form>
-        
+
         <div class="contrast-info">
             Contrast Level: <span id="contrast-level">100%</span>
         </div>
-        
+
         <button class="exit-btn" onclick="exitTest()">
             <i class="fas fa-times"></i> Exit
         </button>
@@ -245,25 +244,25 @@
                 this.currentLanguage = 'english';
                 this.testStartTime = null;
                 this.selectedOption = null;
-                
+
                 // Letter sets for both languages
                 this.letterSets = {
                     english: ['C', 'D', 'H', 'K', 'N', 'O', 'R', 'S'],
                     kannada: ['ಅ', 'ಆ', 'ಇ', 'ಈ', 'ಉ', 'ಊ', 'ಎ', 'ಏ']
                 };
-                
+
                 // Contrast levels (percentage) - more gradual progression for normal vision
                 this.contrastLevels = [100, 80, 60, 40, 20, 10, 5, 2.5, 1.25, 0.625];
                 this.currentContrastIndex = 0;
                 this.currentLetterSet = 0;
-                
+
                 // Generate test sequence
                 this.generateTestSequence();
             }
-            
+
             generateTestSequence() {
                 this.testSequence = [];
-                
+
                 for (let contrast of this.contrastLevels) {
                     for (let letter of this.letterSets[this.currentLanguage]) {
                         this.testSequence.push({
@@ -273,15 +272,15 @@
                         });
                     }
                 }
-                
+
                 // Shuffle the sequence
                 this.shuffleArray(this.testSequence);
             }
-            
+
             generateOptions(correctLetter) {
                 const letterSet = this.letterSets[this.currentLanguage];
                 const options = [correctLetter];
-                
+
                 // Add 3 random incorrect options
                 while (options.length < 4) {
                     const randomLetter = letterSet[Math.floor(Math.random() * letterSet.length)];
@@ -289,56 +288,56 @@
                         options.push(randomLetter);
                     }
                 }
-                
+
                 // Shuffle options
                 this.shuffleArray(options);
                 return options;
             }
-            
+
             shuffleArray(array) {
                 for (let i = array.length - 1; i > 0; i--) {
                     const j = Math.floor(Math.random() * (i + 1));
                     [array[i], array[j]] = [array[j], array[i]];
                 }
             }
-            
+
             setLanguage(language) {
                 this.currentLanguage = language;
-                
+
                 // Update button states
                 document.getElementById('english-btn').className = 
                     language === 'english' ? 'btn btn-primary' : 'btn btn-outline-primary';
                 document.getElementById('kannada-btn').className = 
                     language === 'kannada' ? 'btn btn-primary' : 'btn btn-outline-primary';
-                
+
                 // Enable start button
                 document.getElementById('start-btn').disabled = false;
-                
+
                 // Regenerate test sequence with new language
                 this.generateTestSequence();
             }
-            
+
             switchLanguage(language) {
                 if (language === this.currentLanguage) return;
-                
+
                 this.currentLanguage = language;
-                
+
                 // Update display
                 document.getElementById('current-language').textContent = 
                     language === 'english' ? 'English' : 'ಕನ್ನಡ';
-                
+
                 // Update button states
                 document.getElementById('test-english-btn').className = 
                     language === 'english' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
                 document.getElementById('test-kannada-btn').className = 
                     language === 'kannada' ? 'btn btn-light btn-sm' : 'btn btn-outline-light btn-sm';
-                
+
                 // Regenerate remaining test sequence
                 this.generateTestSequence();
                 this.currentLetterIndex = 0;
                 this.showCurrentLetter();
             }
-            
+
             start() {
                 document.getElementById('instructions').style.display = 'none';
                 document.getElementById('test-container').style.display = 'flex';
@@ -346,43 +345,43 @@
                 this.setupEventListeners();
                 this.showCurrentLetter();
             }
-            
+
             showCurrentLetter() {
                 if (this.currentLetterIndex >= this.testSequence.length) {
                     this.completeTest();
                     return;
                 }
-                
+
                 const currentTest = this.testSequence[this.currentLetterIndex];
                 this.testStartTime = Date.now();
                 this.selectedOption = null;
-                
+
                 // Update display
                 document.getElementById('current-letter').textContent = this.currentLetterIndex + 1;
                 document.getElementById('correct-count').textContent = this.correctCount;
                 document.getElementById('contrast-level').textContent = currentTest.contrast + '%';
-                
+
                 // Show letter with contrast using opacity for better visibility
                 const letterDisplay = document.getElementById('letter-display');
                 letterDisplay.textContent = currentTest.letter;
-                
+
                 // Improved visibility calculation - ensure letters are always visible
                 const visibility = Math.max(0.3, currentTest.contrast / 100);
                 letterDisplay.style.color = `rgba(255, 255, 255, ${visibility})`;
                 letterDisplay.style.textShadow = `0 0 10px rgba(255, 255, 255, ${visibility * 0.5})`;
                 letterDisplay.style.filter = 'none';
-                
+
                 // Generate option buttons
                 this.showOptions(currentTest.options, currentTest.letter);
-                
+
                 // Hide submit button initially
                 document.getElementById('submit-btn').style.display = 'none';
             }
-            
+
             showOptions(options, correctLetter) {
                 const container = document.getElementById('options-container');
                 container.innerHTML = '';
-                
+
                 options.forEach((option, index) => {
                     const optionDiv = document.createElement('div');
                     optionDiv.className = 'letter-option';
@@ -393,17 +392,17 @@
                     `;
                     container.appendChild(optionDiv);
                 });
-                
+
                 // Reset selected option
                 this.selectedOption = null;
             }
-            
+
             selectOption(letter) {
                 // Clear previous selections
                 document.querySelectorAll('.letter-option').forEach(opt => {
                     opt.classList.remove('selected');
                 });
-                
+
                 // Find and mark current selection
                 const selectedElement = document.querySelector(`[data-letter="${letter}"]`);
                 if (selectedElement) {
@@ -413,13 +412,13 @@
                         radio.checked = true;
                     }
                 }
-                
+
                 this.selectedOption = letter;
-                
+
                 // Show submit button
                 document.getElementById('submit-btn').style.display = 'block';
             }
-            
+
             setupEventListeners() {
                 // Use event delegation for option selection
                 const container = document.getElementById('options-container');
@@ -431,7 +430,7 @@
                             this.selectOption(letter);
                         }
                     });
-                    
+
                     container.addEventListener('change', (e) => {
                         if (e.target.type === 'radio' && !e.target.disabled) {
                             const letter = e.target.value;
@@ -446,20 +445,19 @@
                     alert('Please select a letter before submitting.');
                     return;
                 }
-                
-                const currentTest = this.testSequence[this.currentLetterIndex];
-                this.handleResponse(this.selectedOption, currentTest.letter);
+
+                test.handleResponse(test.selectedOption, test.testSequence[test.currentLetterIndex].letter);
             }
-            
+
             handleResponse(selectedLetter, correctLetter) {
                 const responseTime = Date.now() - this.testStartTime;
                 const isCorrect = selectedLetter === correctLetter;
                 const currentTest = this.testSequence[this.currentLetterIndex];
-                
+
                 if (isCorrect) {
                     this.correctCount++;
                 }
-                
+
                 // Record response
                 this.responses.push({
                     letterIndex: this.currentLetterIndex,
@@ -471,29 +469,29 @@
                     responseTime: responseTime,
                     timestamp: new Date()
                 });
-                
+
                 // Provide visual feedback
                 const options = document.querySelectorAll('.letter-option');
                 options.forEach(opt => {
                     const radio = opt.querySelector('input[type="radio"]');
                     const label = opt.querySelector('label');
-                    
+
                     if (label.textContent === correctLetter) {
                         opt.classList.add('correct');
                     } else if (label.textContent === selectedLetter && !isCorrect) {
                         opt.classList.add('incorrect');
                     }
                     radio.disabled = true;
-                    
+
                     // Remove click event handling during feedback
                     opt.style.pointerEvents = 'none';
                 });
-                
+
                 // Disable submit button
                 const submitBtn = document.getElementById('submit-btn');
                 submitBtn.disabled = true;
                 submitBtn.style.display = 'none';
-                
+
                 // Move to next letter after delay
                 setTimeout(() => {
                     this.resetUIState();
@@ -501,37 +499,37 @@
                     this.showCurrentLetter();
                 }, 1500);
             }
-            
+
             resetUIState() {
                 // Reset all UI elements for next trial
                 this.selectedOption = null;
-                
+
                 // Reset submit button
                 const submitBtn = document.getElementById('submit-btn');
                 submitBtn.disabled = false;
                 submitBtn.style.display = 'none';
-                
+
                 // Clear any form state
                 const form = document.getElementById('letter-form');
                 if (form) {
                     form.reset();
                 }
-                
+
                 // Re-enable pointer events on options container
                 const container = document.getElementById('options-container');
                 if (container) {
                     container.style.pointerEvents = 'auto';
                 }
             }
-            
+
             completeTest() {
                 const endTime = new Date();
                 const duration = Math.round((endTime - this.startTime) / 1000);
-                
+
                 // Calculate contrast levels achieved
                 const contrastLevels = this.responses.map(r => r.contrastLevel);
                 const letterAccuracy = Math.round((this.correctCount / this.responses.length) * 100);
-                
+
                 const testData = {
                     patient_name: this.patientName,
                     duration: duration,
@@ -544,14 +542,14 @@
                     end_time: endTime.toLocaleTimeString(),
                     responses: this.responses
                 };
-                
+
                 // Save results
                 this.saveResults(testData);
-                
+
                 // Show results
                 this.showResults(testData);
             }
-            
+
             saveResults(data) {
                 fetch('/api/save_result', {
                     method: 'POST',
@@ -568,11 +566,11 @@
                     console.error('Error saving results:', error);
                 });
             }
-            
+
             showResults(data) {
                 const minContrast = Math.min(...data.contrast_levels.filter((_, i) => this.responses[i].isCorrect));
                 const maxContrast = Math.max(...data.contrast_levels.filter((_, i) => this.responses[i].isCorrect));
-                
+
                 document.body.innerHTML = `
                     <div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center">
                         <div class="text-center">
@@ -580,7 +578,7 @@
                                 <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
                                 <h2>CSV-1000 Test Completed</h2>
                             </div>
-                            
+
                             <div class="card bg-dark border-secondary mx-auto" style="max-width: 600px;">
                                 <div class="card-body">
                                     <h5 class="card-title">Test Results</h5>
@@ -603,7 +601,7 @@
                                             <small>Min Contrast</small>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="text-start">
                                         <h6>Contrast Sensitivity Analysis:</h6>
                                         <p class="text-muted">
@@ -619,7 +617,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <div class="mt-4">
                                 <button class="btn btn-primary btn-lg me-3" onclick="window.location.href='http://${window.location.hostname}:5000/patient'">
                                     <i class="fas fa-arrow-left me-2"></i>
@@ -635,35 +633,35 @@
                 `;
             }
         }
-        
+
         let test = null;
-        
+
         function setLanguage(language) {
             if (!test) {
                 test = new CSV1000Test();
             }
             test.setLanguage(language);
         }
-        
+
         function switchLanguage(language) {
             if (test) {
                 test.switchLanguage(language);
             }
         }
-        
+
         function startTest() {
             if (!test) {
                 test = new CSV1000Test();
             }
             test.start();
         }
-        
+
         function exitTest() {
             if (confirm('Are you sure you want to exit this test?')) {
                 window.location.href = 'http://' + window.location.hostname + ':5000/patient';
             }
         }
-        
+
         // Handle keyboard shortcuts
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
