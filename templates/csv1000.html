@@ -391,6 +391,16 @@
                 }
             }
 
+            submitResponse() {
+                if (!this.selectedOption) {
+                    alert('Please select a letter before submitting.');
+                    return;
+                }
+                
+                const currentTest = this.testSequence[this.currentLetterIndex];
+                this.handleResponse(this.selectedOption, currentTest.letter);
+            }
+
             handleResponse(selectedLetter, correctLetter) {
                 const responseTime = Date.now() - this.testStartTime;
                 const isCorrect = selectedLetter === correctLetter;

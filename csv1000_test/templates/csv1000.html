@@ -436,6 +436,16 @@
                     });
                 }
             }
+
+            submitResponse() {
+                if (!this.selectedOption) {
+                    alert('Please select a letter before submitting.');
+                    return;
+                }
+                
+                const currentTest = this.testSequence[this.currentLetterIndex];
+                this.handleResponse(this.selectedOption, currentTest.letter);
+            }
             
             submitResponse() {
                 if (!this.selectedOption) {
