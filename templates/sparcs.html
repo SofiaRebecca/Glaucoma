@@ -347,13 +347,7 @@
             }
 
             initializeTest() {
-                this.testContainer = document.getElementById('test-container');
-                this.generateTestPoints();
-
-                // Show fullscreen button on mobile
-                if (isMobileDevice()) {
-                    document.getElementById('start-test-fullscreen-btn').style.display = 'block';
-                }
+                this.grid = document.getElementById('sparcs-grid');
             }
 
             start() {
