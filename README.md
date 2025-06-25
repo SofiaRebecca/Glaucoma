@@ -64,7 +64,7 @@ Images are included in the private repository under the `images/` folder. Here�
 | Test | English UI | Kannada UI |
 |------|------------|------------|
 | **Pelli-Robson**      | ![Pelli English](images/Pelli-robson_english.png) | ![Pelli Kannada](images/pelli-robson_kannada.png) |
-| **CSV-1000**          | ![CSV English](images/Screenshot 2025-05-31 133524.png)     | ![CSV Kannada](images/csv-1000_kannada.png)     |
+| **CSV-1000**          | ![CSV English](images/csv.png)     | ![CSV Kannada](images/csv-1000_kannada.png)     |
 | **SPARCS**            | ![SPARCS](images/sparcs.png)          | — |
 | **24-2 Humphrey**     | ![Humphrey](images/visual_field_test.png)      | — |
 | **Motion Detection**  | ![Motion](images/motion_test.png)          | — |
