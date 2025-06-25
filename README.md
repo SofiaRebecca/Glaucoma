@@ -141,8 +141,9 @@ Watch the full platform in action: patient login, test flow, doctor mirroring, a
 ---
 
 
-📫 Contact
-🧑‍💻 Developed by Sofia Rebecca
-📬 sofia.beckah@gmail.com
-🔗 https://www.linkedin.com/in/sofia-rebecca-830475280
+## 📫 Contact
+
+🧑‍💻 Developed by **Sofia Rebecca**  
+📬 sofia.beckah@gmail.com  
+🔗 [LinkedIn](https://www.linkedin.com/in/sofia-rebecca-830475280)
 
