@@ -131,9 +131,15 @@ The vision test results and doctor inputs are processed and fed into a **multi-b
 ## 🎥 Demo – Test Workflow Overview
 
 Watch the full platform in action: patient login, test flow, doctor mirroring, and classification output.
-> ℹ️ For high-quality video, [click here to view the full demo](demo.mp4)
+
+### 🔹 GIF Preview
+![Demo Walkthrough](demo.gif)
+
+> ℹ️ For high-quality video, [click here to view the full demo](demo.mp4)  
+> *(Requires download from private GitHub repo due to confidentiality)*
 
 ---
+
 
 📫 Contact
 🧑‍💻 Developed by Sofia Rebecca
